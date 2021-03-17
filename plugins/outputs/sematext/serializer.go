@@ -32,8 +32,6 @@ func NewLinePerMetricSerializer() *LinePerMetricSerializer {
 func (s *LinePerMetricSerializer) Write(metrics []telegraf.Metric) []byte {
 	var output bytes.Buffer
 
-	// TODO sort by name to keep consistent order
-
 	// sematext format is based on influx line protocol: namespace,tags metrics timestamp
 	for _, metric := range metrics {
 		if len(metric.Fields()) == 0 {

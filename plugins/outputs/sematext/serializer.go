@@ -19,7 +19,7 @@ type MetricSerializer interface {
 // LinePerMetricSerializer provides simple implementation which writes each metric into a new line. The logic is simpler
 // and lighter, but the resulting output will be bigger.
 type LinePerMetricSerializer struct {
-	Log telegraf.Logger
+	log telegraf.Logger
 }
 
 // NewLinePerMetricSerializer creates an instance of NewLinePerMetricSerializer
@@ -35,7 +35,7 @@ func (s *LinePerMetricSerializer) Write(metrics []telegraf.Metric) []byte {
 	// sematext format is based on influx line protocol: namespace,tags metrics timestamp
 	for _, metric := range metrics {
 		if len(metric.Fields()) == 0 {
-			s.Log.Debugf("Skipping the serialization of metric %s without fields ", metric.Name())
+			s.log.Debugf("Skipping the serialization of metric %s without fields ", metric.Name())
 			continue
 		}
 
@@ -67,11 +67,9 @@ func serializeTags(tags map[string]string) string {
 	var serializedTags strings.Builder
 
 	// make tag order sorted
-	sortedTagKeys := make([]string, len(tags))
-	var counter = 0
+	sortedTagKeys := make([]string, 0, len(tags))
 	for t := range tags {
-		sortedTagKeys[counter] = t
-		counter++
+		sortedTagKeys = append(sortedTagKeys, t)
 	}
 	sort.Strings(sortedTagKeys)
 

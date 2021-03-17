@@ -14,7 +14,7 @@ import (
 
 func TestWrite(t *testing.T) {
 	serializer := NewLinePerMetricSerializer()
-	serializer.Log = testutil.Logger{}
+	serializer.log = testutil.Logger{}
 
 	now := time.Now()
 
@@ -33,7 +33,7 @@ func TestWrite(t *testing.T) {
 
 func TestWriteNoTags(t *testing.T) {
 	serializer := NewLinePerMetricSerializer()
-	serializer.Log = testutil.Logger{}
+	serializer.log = testutil.Logger{}
 
 	now := time.Now()
 
@@ -52,7 +52,7 @@ func TestWriteNoTags(t *testing.T) {
 
 func TestWriteNoMetrics(t *testing.T) {
 	serializer := NewLinePerMetricSerializer()
-	serializer.Log = testutil.Logger{}
+	serializer.log = testutil.Logger{}
 
 	now := time.Now()
 
@@ -69,7 +69,7 @@ func TestWriteNoMetrics(t *testing.T) {
 
 func TestWriteMultipleTagsAndMetrics(t *testing.T) {
 	serializer := NewLinePerMetricSerializer()
-	serializer.Log = testutil.Logger{}
+	serializer.log = testutil.Logger{}
 
 	now := time.Now()
 

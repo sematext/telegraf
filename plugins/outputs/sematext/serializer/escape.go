@@ -1,5 +1,5 @@
 // logic copied from plugins/serializers/influx/escape.go
-package sematext
+package serializer
 
 import "strings"
 

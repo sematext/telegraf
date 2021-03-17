@@ -1,4 +1,4 @@
-package sematext
+package serializer
 
 import (
 	"fmt"

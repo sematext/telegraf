@@ -17,7 +17,7 @@ func TestGetProxyHeaderNone(t *testing.T) {
 func TestGetProxyHeaderNoUsernameOrPassword(t *testing.T) {
 	proxyUrl, _ := url.Parse("https://proxy.sematext.com:1234")
 	config := &Config{
-		proxyURL: proxyUrl,
+		ProxyURL: proxyUrl,
 	}
 	assert.Equal(t, "", getProxyHeader(config))
 }
@@ -25,9 +25,9 @@ func TestGetProxyHeaderNoUsernameOrPassword(t *testing.T) {
 func TestGetProxyHeaderWithAuth(t *testing.T) {
 	proxyUrl, _ := url.Parse("https://proxy.sematext.com:1234")
 	config := &Config{
-		proxyURL: proxyUrl,
-		username: "user",
-		password: "password",
+		ProxyURL: proxyUrl,
+		Username: "user",
+		Password: "password",
 	}
 	assert.Equal(t, fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("user:password"))),
 		getProxyHeader(config))
@@ -49,9 +49,9 @@ func TestCreateRequestNoProxy(t *testing.T) {
 func TestCreateRequestWithProxy(t *testing.T) {
 	proxyUrl, _ := url.Parse("https://proxy.sematext.com:1234")
 	config := &Config{
-		proxyURL: proxyUrl,
-		username: "username",
-		password: "password",
+		ProxyURL: proxyUrl,
+		Username: "username",
+		Password: "password",
 	}
 	sender := NewSender(config)
 

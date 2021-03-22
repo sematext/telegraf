@@ -27,6 +27,10 @@ func NewLinePerMetricSerializer() *LinePerMetricSerializer {
 	return &LinePerMetricSerializer{}
 }
 
+func NewMetricSerializer() MetricSerializer {
+	return &LinePerMetricSerializer{}
+}
+
 // Write serializes input metrics array according to Sematext variant of influx line protocol. The output is returned
 // as []byte which can be empty if there were no metrics or metrics couldn't be serialized.
 func (s *LinePerMetricSerializer) Write(metrics []telegraf.Metric) []byte {

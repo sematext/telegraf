@@ -25,12 +25,9 @@ const (
 
 // Config contains sender configuration
 type Config struct {
-	baseReceiverUrl string
-	databaseName    string
-
-	proxyURL *url.URL
-	username string
-	password string
+	ProxyURL *url.URL
+	Username string
+	Password string
 }
 
 // Sender is a simple wrapper around standard HTTP client
@@ -48,8 +45,8 @@ func NewSender(config *Config) *Sender {
 		TLSHandshakeTimeout: defaultConnectTimeout,
 	}
 
-	if config.proxyURL != nil {
-		transport.Proxy = http.ProxyURL(config.proxyURL)
+	if config.ProxyURL != nil {
+		transport.Proxy = http.ProxyURL(config.ProxyURL)
 	}
 
 	c := &http.Client{
@@ -63,23 +60,23 @@ func NewSender(config *Config) *Sender {
 // getProxyHeader creates proxy authentication header based on config settings
 func getProxyHeader(config *Config) string {
 	var proxyAuth string
-	if config.proxyURL != nil && len(config.username) > 0 && len(config.password) > 0 {
-		auth := fmt.Sprintf("%s:%s", config.username, config.password)
+	if config.ProxyURL != nil && len(config.Username) > 0 && len(config.Password) > 0 {
+		auth := fmt.Sprintf("%s:%s", config.Username, config.Password)
 		proxyAuth = fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(auth)))
 	}
 	return proxyAuth
 }
 
 // Request emits an HTTP request targeting given HTTP method and URL.
-func (c *Sender) Request(method, url, contentType string, body []byte) (*http.Response, error) {
-	req, err := c.createRequest(method, url, contentType, body)
+func (s *Sender) Request(method, url, contentType string, body []byte) (*http.Response, error) {
+	req, err := s.createRequest(method, url, contentType, body)
 	if err != nil {
 		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-	res, err := c.client.Do(req.WithContext(ctx))
+	res, err := s.client.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +84,8 @@ func (c *Sender) Request(method, url, contentType string, body []byte) (*http.Re
 	return res, nil
 }
 
-func (c *Sender) createRequest(method, url, contentType string, body []byte) (*http.Request, error) {
+// createRequest forms the request object based on method, url, content type and body which should be sent
+func (s *Sender) createRequest(method, url, contentType string, body []byte) (*http.Request, error) {
 	req, err := http.NewRequest(method, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
@@ -96,9 +94,13 @@ func (c *Sender) createRequest(method, url, contentType string, body []byte) (*h
 	req.Header.Set(headerContentType, contentType)
 	req.Header.Set(headerAgent, "telegraf")
 
-	if len(c.proxyAuth) > 0 {
-		req.Header.Add(headerProxyAuth, c.proxyAuth)
+	if len(s.proxyAuth) > 0 {
+		req.Header.Add(headerProxyAuth, s.proxyAuth)
 	}
 
 	return req, nil
+}
+
+func (s *Sender) Close() {
+	s.client = nil
 }

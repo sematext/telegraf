@@ -114,13 +114,12 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 	body := s.serializer.Write(metrics)
 
 	res, err := s.sender.Request("POST", s.metricsUrl, "text/plain; charset=utf-8", body)
-	if res != nil && res.Body != nil {
-		defer res.Body.Close()
-	}
 	if err != nil {
+		// TODO whether we return an error or not should depend on whether there should be a retry
 		s.Log.Errorf("error while sending to %s : %s", s.ReceiverUrl, err.Error())
 		return err
 	}
+	defer res.Body.Close()
 
 	success := res.StatusCode >= 200 && res.StatusCode < 300
 	if !success {

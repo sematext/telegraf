@@ -62,7 +62,6 @@ func (s *Sematext) Description() string {
 // Init performs full initialization of Sematext output
 func (s *Sematext) Init() error {
 	if len(s.Token) == 0 {
-		s.Log.Error("'token' is a required field for Sematext output")
 		return fmt.Errorf("'token' is a required field for Sematext output")
 	}
 	if len(s.ReceiverUrl) == 0 {
@@ -71,8 +70,7 @@ func (s *Sematext) Init() error {
 
 	proxyURL, err := url.Parse(s.ProxyServer)
 	if err != nil {
-		s.Log.Errorf("invalid ProxyServer: %v", err)
-		return fmt.Errorf("invalid ProxyServer: %v", err)
+		return fmt.Errorf("invalid url %s for the proxy server: %v", s.ProxyServer, err)
 	}
 	s.senderConfig = &sender.Config{
 		ProxyURL: proxyURL,

@@ -19,9 +19,9 @@ const (
 // We'll use one separate instance of Telegraf for each monitored service. Therefore, token for particular service
 // will be configured on Sematext output level
 type Sematext struct {
-	ReceiverUrl string          `toml:"receiverUrl"`
+	ReceiverUrl string          `toml:"receiver_url"`
 	Token       string          `toml:"token"`
-	ProxyServer string          `toml:"proxyServer"`
+	ProxyServer string          `toml:"proxy_server"`
 	Username    string          `toml:"username"`
 	Password    string          `toml:"password"`
 	Log         telegraf.Logger `toml:"-"`

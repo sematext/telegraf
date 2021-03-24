@@ -27,6 +27,7 @@ func NewLinePerMetricSerializer() *LinePerMetricSerializer {
 	return &LinePerMetricSerializer{}
 }
 
+// NewMetricSerializer creates and instance serializer which should be used to produce Sematext metrics format
 func NewMetricSerializer() MetricSerializer {
 	return &LinePerMetricSerializer{}
 }

@@ -101,6 +101,7 @@ func (s *Sender) createRequest(method, url, contentType string, body []byte) (*h
 	return req, nil
 }
 
+// Close is a method which clears resources used by the Sender, should be invoked once the Sender is not needed anymore
 func (s *Sender) Close() {
 	s.client = nil
 }

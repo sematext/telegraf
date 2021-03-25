@@ -8,9 +8,7 @@ type Token struct {
 }
 
 // Process is a method where Token processor logic is implemented
-func (t *Token) Process(metrics []telegraf.Metric) error {
-	for _, m := range metrics {
-		m.AddTag("token", t.Token)
-	}
+func (t *Token) Process(metric telegraf.Metric) error {
+	metric.AddTag("token", t.Token)
 	return nil
 }

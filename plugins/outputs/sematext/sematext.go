@@ -102,36 +102,55 @@ func (s *Sematext) initProcessors() {
 
 // Write sends metrics to Sematext backend and handles the response
 func (s *Sematext) Write(metrics []telegraf.Metric) error {
-	for _, p := range s.processors {
-		err := p.Process(metrics)
+	processedMetrics := s.processMetrics(metrics)
 
+	if len(processedMetrics) > 0 {
+		body := s.serializer.Write(processedMetrics)
+
+		res, err := s.sender.Request("POST", s.metricsUrl, "text/plain; charset=utf-8", body)
 		if err != nil {
-			s.Log.Errorf("can't process metrics in Sematext output, error : %s", err.Error())
+			// TODO whether we return an error or not should depend on whether there should be a retry
+			s.Log.Errorf("error while sending to %s : %s", s.ReceiverUrl, err.Error())
 			return err
 		}
-	}
+		defer res.Body.Close()
 
-	body := s.serializer.Write(metrics)
-
-	res, err := s.sender.Request("POST", s.metricsUrl, "text/plain; charset=utf-8", body)
-	if err != nil {
-		// TODO whether we return an error or not should depend on whether there should be a retry
-		s.Log.Errorf("error while sending to %s : %s", s.ReceiverUrl, err.Error())
-		return err
-	}
-	defer res.Body.Close()
-
-	success := res.StatusCode >= 200 && res.StatusCode < 300
-	if !success {
-		// TODO in the future, consider handling the retries for bad-request cases
-		// badRequest := res.StatusCode >= 400 && res.StatusCode < 500
-		// if !badRequest {
-		return s.logAndCreateError(res)
+		success := res.StatusCode >= 200 && res.StatusCode < 300
+		if !success {
+			// TODO in the future, consider handling the retries for bad-request cases
+			// badRequest := res.StatusCode >= 400 && res.StatusCode < 500
+			// if !badRequest {
+			return s.logAndCreateError(res)
+		}
 	}
 
 	return nil
 }
 
+func (s *Sematext) processMetrics(metrics []telegraf.Metric) []telegraf.Metric {
+	processedMetrics := make([]telegraf.Metric, 0, len(metrics))
+
+	for _, metric := range metrics {
+		metricOk := true
+		for _, p := range s.processors {
+			err := p.Process(metric)
+
+			if err != nil {
+				// log the message, mark the metric to be skipped, skip other processors
+				s.Log.Warnf("can't process metric: %s in Sematext output, error : %s", metric, err.Error())
+				metricOk = false
+				break
+			}
+		}
+		if metricOk {
+			processedMetrics = append(processedMetrics, metric)
+		}
+	}
+	return processedMetrics
+}
+
+// TODO may not be needed as we have to rework how retry logic works depending on response status codes; sometimes
+// we'll log the message, sometimes return an error, possibly never have to do both
 // logAndCreateError logs the error message and forms an error object
 func (s *Sematext) logAndCreateError(res *http.Response) error {
 	errorMsg := fmt.Sprintf("received %d status code, message = '%s' while sending to %s", res.StatusCode,

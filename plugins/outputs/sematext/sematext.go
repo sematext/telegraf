@@ -99,7 +99,9 @@ func (s *Sematext) initProcessors() {
 			Token: s.Token,
 		},
 	}
-	s.batchProcessors = []processors.BatchProcessor{}
+	s.batchProcessors = []processors.BatchProcessor{
+		&processors.Heartbeat{},
+	}
 }
 
 // Write sends metrics to Sematext backend and handles the response

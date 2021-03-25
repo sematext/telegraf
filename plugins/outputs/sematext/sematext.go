@@ -12,21 +12,21 @@ import (
 )
 
 const (
-	defaultSematextMetricsReceiverUrl = "https://spm-receiver.sematext.com"
+	defaultSematextMetricsReceiverURL = "https://spm-receiver.sematext.com"
 )
 
 // Sematext struct contains configuration read from Telegraf config and a few runtime objects.
 // We'll use one separate instance of Telegraf for each monitored service. Therefore, token for particular service
 // will be configured on Sematext output level
 type Sematext struct {
-	ReceiverUrl string          `toml:"receiver_url"`
+	ReceiverURL string          `toml:"receiver_url"`
 	Token       string          `toml:"token"`
 	ProxyServer string          `toml:"proxy_server"`
 	Username    string          `toml:"username"`
 	Password    string          `toml:"password"`
 	Log         telegraf.Logger `toml:"-"`
 
-	metricsUrl   string
+	metricsURL   string
 	sender       *sender.Sender
 	senderConfig *sender.Config
 	serializer   serializer.MetricSerializer
@@ -64,8 +64,8 @@ func (s *Sematext) Init() error {
 	if len(s.Token) == 0 {
 		return fmt.Errorf("'token' is a required field for Sematext output")
 	}
-	if len(s.ReceiverUrl) == 0 {
-		s.ReceiverUrl = defaultSematextMetricsReceiverUrl
+	if len(s.ReceiverURL) == 0 {
+		s.ReceiverURL = defaultSematextMetricsReceiverURL
 	}
 
 	proxyURL, err := url.Parse(s.ProxyServer)
@@ -78,13 +78,13 @@ func (s *Sematext) Init() error {
 		Password: s.Password,
 	}
 	s.sender = sender.NewSender(s.senderConfig)
-	s.metricsUrl = s.ReceiverUrl + "/write?db=metrics"
+	s.metricsURL = s.ReceiverURL + "/write?db=metrics"
 
 	s.initProcessors()
 
 	s.serializer = serializer.NewMetricSerializer()
 
-	s.Log.Infof("Sematext output started with Token=%s, ReceiverUrl=%s, ProxyServer=%s", s.Token, s.ReceiverUrl,
+	s.Log.Infof("Sematext output started with Token=%s, ReceiverUrl=%s, ProxyServer=%s", s.Token, s.ReceiverURL,
 		s.ProxyServer)
 
 	return nil
@@ -107,10 +107,10 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 	if len(processedMetrics) > 0 {
 		body := s.serializer.Write(processedMetrics)
 
-		res, err := s.sender.Request("POST", s.metricsUrl, "text/plain; charset=utf-8", body)
+		res, err := s.sender.Request("POST", s.metricsURL, "text/plain; charset=utf-8", body)
 		if err != nil {
 			// TODO whether we return an error or not should depend on whether there should be a retry
-			s.Log.Errorf("error while sending to %s : %s", s.ReceiverUrl, err.Error())
+			s.Log.Errorf("error while sending to %s : %s", s.ReceiverURL, err.Error())
 			return err
 		}
 		defer res.Body.Close()
@@ -154,7 +154,7 @@ func (s *Sematext) processMetrics(metrics []telegraf.Metric) []telegraf.Metric {
 // logAndCreateError logs the error message and forms an error object
 func (s *Sematext) logAndCreateError(res *http.Response) error {
 	errorMsg := fmt.Sprintf("received %d status code, message = '%s' while sending to %s", res.StatusCode,
-		res.Status, s.ReceiverUrl)
+		res.Status, s.ReceiverURL)
 	s.Log.Error(errorMsg)
 	return fmt.Errorf(errorMsg)
 }

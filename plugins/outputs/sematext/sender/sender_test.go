@@ -15,17 +15,17 @@ func TestGetProxyHeaderNone(t *testing.T) {
 }
 
 func TestGetProxyHeaderNoUsernameOrPassword(t *testing.T) {
-	proxyUrl, _ := url.Parse("https://proxy.sematext.com:1234")
+	proxyURL, _ := url.Parse("https://proxy.sematext.com:1234")
 	config := &Config{
-		ProxyURL: proxyUrl,
+		ProxyURL: proxyURL,
 	}
 	assert.Equal(t, "", getProxyHeader(config))
 }
 
 func TestGetProxyHeaderWithAuth(t *testing.T) {
-	proxyUrl, _ := url.Parse("https://proxy.sematext.com:1234")
+	proxyURL, _ := url.Parse("https://proxy.sematext.com:1234")
 	config := &Config{
-		ProxyURL: proxyUrl,
+		ProxyURL: proxyURL,
 		Username: "user",
 		Password: "password",
 	}
@@ -47,9 +47,9 @@ func TestCreateRequestNoProxy(t *testing.T) {
 }
 
 func TestCreateRequestWithProxy(t *testing.T) {
-	proxyUrl, _ := url.Parse("https://proxy.sematext.com:1234")
+	proxyURL, _ := url.Parse("https://proxy.sematext.com:1234")
 	config := &Config{
-		ProxyURL: proxyUrl,
+		ProxyURL: proxyURL,
 		Username: "username",
 		Password: "password",
 	}

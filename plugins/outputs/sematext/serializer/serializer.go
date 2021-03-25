@@ -147,5 +147,5 @@ func serializeMetric(key string, value interface{}) string {
 // repeating the same tags+timestamp multiple times.
 // TODO to be implemented in the future to make Telegraf requests to Sematext backend smaller
 type CompactMetricSerializer struct {
-	tagsIdToMetrics map[string]telegraf.Metric
+	tagsIDToMetrics map[string]telegraf.Metric
 }

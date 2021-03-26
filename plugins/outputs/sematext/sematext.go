@@ -109,7 +109,10 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 	processedMetrics, err := s.processMetrics(metrics)
 
 	if err != nil {
-		s.Log.Errorf("error while preparing to send metrics to Sematext: %v", err)
+		// error means the whole batch should be discarded without sending it. To achieve that, we have to return
+		// nil
+		s.Log.Errorf("error while preparing to send metrics to Sematext, the batch will be dropped: %v", err)
+		return nil
 	}
 
 	if len(processedMetrics) > 0 {
@@ -135,6 +138,7 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 	return nil
 }
 
+// processMetrics returns an error only when the whole batch of metrics should be discarded
 func (s *Sematext) processMetrics(metrics []telegraf.Metric) ([]telegraf.Metric, error) {
 	for _, p := range s.batchProcessors {
 		var err error

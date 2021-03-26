@@ -12,3 +12,10 @@ func (t *Token) Process(metric telegraf.Metric) error {
 	metric.AddTag("token", t.Token)
 	return nil
 }
+
+// NewToken creates a new token processor
+func NewToken(token string) *Token {
+	return &Token{
+		Token: token,
+	}
+}

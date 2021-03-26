@@ -26,11 +26,12 @@ type Sematext struct {
 	Password    string          `toml:"password"`
 	Log         telegraf.Logger `toml:"-"`
 
-	metricsURL   string
-	sender       *sender.Sender
-	senderConfig *sender.Config
-	serializer   serializer.MetricSerializer
-	processors   []processors.Processor
+	metricsURL       string
+	sender           *sender.Sender
+	senderConfig     *sender.Config
+	serializer       serializer.MetricSerializer
+	metricProcessors []processors.MetricProcessor
+	batchProcessors  []processors.BatchProcessor
 }
 
 // TODO add real sample config
@@ -93,16 +94,24 @@ func (s *Sematext) Init() error {
 // initProcessors instantiates all metric processors that will be used to prepare metrics/tags for sending to Sematext
 func (s *Sematext) initProcessors() {
 	// add more processors as they are implemented
-	s.processors = []processors.Processor{
-		&processors.Token{
-			Token: s.Token,
-		},
+	s.metricProcessors = []processors.MetricProcessor{
+		processors.NewToken(s.Token),
+	}
+	s.batchProcessors = []processors.BatchProcessor{
+		processors.NewHeartbeat(),
 	}
 }
 
 // Write sends metrics to Sematext backend and handles the response
 func (s *Sematext) Write(metrics []telegraf.Metric) error {
-	processedMetrics := s.processMetrics(metrics)
+	processedMetrics, err := s.processMetrics(metrics)
+
+	if err != nil {
+		// error means the whole batch should be discarded without sending it. To achieve that, we have to return
+		// nil
+		s.Log.Errorf("error while preparing to send metrics to Sematext, the batch will be dropped: %v", err)
+		return nil
+	}
 
 	if len(processedMetrics) > 0 {
 		body := s.serializer.Write(processedMetrics)
@@ -127,12 +136,23 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 	return nil
 }
 
-func (s *Sematext) processMetrics(metrics []telegraf.Metric) []telegraf.Metric {
+// processMetrics returns an error only when the whole batch of metrics should be discarded
+func (s *Sematext) processMetrics(metrics []telegraf.Metric) ([]telegraf.Metric, error) {
+	for _, p := range s.batchProcessors {
+		var err error
+		metrics, err = p.Process(metrics)
+
+		if err != nil {
+			s.Log.Errorf("error while running batch processors in Sematext output: %v", err)
+			return metrics, err
+		}
+	}
+
 	processedMetrics := make([]telegraf.Metric, 0, len(metrics))
 
 	for _, metric := range metrics {
 		metricOk := true
-		for _, p := range s.processors {
+		for _, p := range s.metricProcessors {
 			err := p.Process(metric)
 
 			if err != nil {
@@ -146,7 +166,7 @@ func (s *Sematext) processMetrics(metrics []telegraf.Metric) []telegraf.Metric {
 			processedMetrics = append(processedMetrics, metric)
 		}
 	}
-	return processedMetrics
+	return processedMetrics, nil
 }
 
 // TODO may not be needed as we have to rework how retry logic works depending on response status codes; sometimes

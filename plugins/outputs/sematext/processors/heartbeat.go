@@ -3,6 +3,7 @@ package processors
 import (
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/metric"
+	"sync"
 	"time"
 )
 
@@ -13,16 +14,20 @@ const (
 // Heartbeat is a batch processor that injects heartbeat metric as necessary (once per minute).
 type Heartbeat struct {
 	lastInjectedMinute int64
+	lock               sync.Mutex
 }
 
 // Process is a method where Heartbeat processor checks whether a heartbeat metric is needed and injects it if so
-func (t *Heartbeat) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error) {
+func (h *Heartbeat) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error) {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
 	now := time.Now()
-	if t.heartbeatNeeded(now) {
+	if h.heartbeatNeeded(now) {
 		// a heartbeat metric will be added to the batch with "current" timestamp regardless of whether the batch
 		// is a fresh one or is being resent because of an earlier failure - the only important things are that it is
 		// created and that we try to send it as soon as possible
-		newMetrics, err := t.addHeartbeat(metrics, now)
+		newMetrics, err := h.addHeartbeat(metrics, now)
 
 		if err != nil {
 			return metrics, err
@@ -34,19 +39,19 @@ func (t *Heartbeat) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error
 	return metrics, nil
 }
 
-func (t *Heartbeat) addHeartbeat(metrics []telegraf.Metric, now time.Time) ([]telegraf.Metric, error) {
-	hb, err := t.createHeartbeat(now)
+func (h *Heartbeat) addHeartbeat(metrics []telegraf.Metric, now time.Time) ([]telegraf.Metric, error) {
+	hb, err := h.createHeartbeat(now)
 	if err != nil {
 		return nil, err
 	}
 
 	metrics = append(metrics, hb)
-	t.lastInjectedMinute = getEpochMinute(now)
+	h.lastInjectedMinute = getEpochMinute(now)
 
 	return metrics, nil
 }
 
-func (t *Heartbeat) createHeartbeat(timestamp time.Time) (telegraf.Metric, error) {
+func (h *Heartbeat) createHeartbeat(timestamp time.Time) (telegraf.Metric, error) {
 	// no need to inject any Sematext specific tags since MetricProcessors will be run afterwards and will take care
 	// of such things
 	hb, err := metric.New("heartbeat",
@@ -61,9 +66,9 @@ func (t *Heartbeat) createHeartbeat(timestamp time.Time) (telegraf.Metric, error
 	return hb, nil
 }
 
-func (t *Heartbeat) heartbeatNeeded(now time.Time) bool {
+func (h *Heartbeat) heartbeatNeeded(now time.Time) bool {
 	nowMinute := getEpochMinute(now)
-	return nowMinute > t.lastInjectedMinute
+	return nowMinute > h.lastInjectedMinute
 }
 
 func getEpochMinute(time time.Time) int64 {

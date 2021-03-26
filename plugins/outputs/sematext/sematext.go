@@ -95,12 +95,10 @@ func (s *Sematext) Init() error {
 func (s *Sematext) initProcessors() {
 	// add more processors as they are implemented
 	s.metricProcessors = []processors.MetricProcessor{
-		&processors.Token{
-			Token: s.Token,
-		},
+		processors.NewToken(s.Token),
 	}
 	s.batchProcessors = []processors.BatchProcessor{
-		&processors.Heartbeat{},
+		processors.NewHeartbeat(),
 	}
 }
 

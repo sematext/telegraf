@@ -10,15 +10,18 @@ const (
 	oneMinuteSeconds int64 = 60
 )
 
-// Heartbeat is a batch processor that injects heartbeat metric as necessary (once per minute)
+// Heartbeat is a batch processor that injects heartbeat metric as necessary (once per minute).
 type Heartbeat struct {
 	lastInjectedMinute int64
 }
 
-// Process is a method where Heartbeat processor logic is implemented
+// Process is a method where Heartbeat processor checks whether a heartbeat metric is needed and injects it if so
 func (t *Heartbeat) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error) {
 	now := time.Now()
 	if t.heartbeatNeeded(now) {
+		// a heartbeat metric will be added to the batch with "current" timestamp regardless of whether the batch
+		// is a fresh one or is being resent because of an earlier failure - the only important things are that it is
+		// created and that we try to send it as soon as possible
 		newMetrics, err := t.addHeartbeat(metrics, now)
 
 		if err != nil {

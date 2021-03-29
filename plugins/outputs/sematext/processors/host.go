@@ -1,9 +1,8 @@
 package processors
 
 import (
-	"bufio"
 	"github.com/influxdata/telegraf"
-	"os"
+	"io/ioutil"
 	"path"
 	"sync"
 	"time"
@@ -20,17 +19,29 @@ type Host struct {
 	lock         sync.RWMutex
 	reloadTicker *time.Ticker
 	stopReload   chan bool
+	Log          telegraf.Logger
 }
 
 // NewHost creates and initializes an instance of Host processor. It also starts periodic host reload goroutine.
-func NewHost() *Host {
+func NewHost(log telegraf.Logger) *Host {
 	// do the initial load before spawning a goroutine which will periodically reload the hostname
 	hostnameFileName := getHostnameFileName()
-	h := &Host{
-		hostname: loadHostname(hostnameFileName),
+
+	var host string
+	var err error
+	if hostnameFileName != "" {
+		host, err = loadHostname(hostnameFileName)
+		if err != nil {
+			log.Warnf("can't load the hostname from the file %s, error: %v", hostnameFileName, err)
+		}
 	}
 
-	// if the Sematext dir (which might hold the hostname file) doesn't exist, no point in starting the goroutine
+	h := &Host{
+		hostname: host,
+		Log:      log,
+	}
+
+	// if the Sematext dir (which might hold the hostname file) doesn't exist, no point in starting the ticker
 	if hostnameFileName != "" {
 		h.reloadTicker = time.NewTicker(5 * time.Minute)
 		h.stopReload = make(chan bool, 1)
@@ -41,8 +52,13 @@ func NewHost() *Host {
 				case <-h.stopReload:
 					return
 				case <-h.reloadTicker.C:
+					host, err = loadHostname(hostnameFileName)
+					if err != nil {
+						log.Warnf("can't load the hostname from the file %s, error: %v", hostnameFileName, err)
+					}
+
 					h.lock.Lock()
-					loadHostname(hostnameFileName)
+					h.hostname = host
 					h.lock.Unlock()
 				}
 			}
@@ -83,6 +99,7 @@ func adjustHostname(metric telegraf.Metric, loadedHostname string) {
 	}
 }
 
+// getHostnameFileName returns the full path of the hostname
 func getHostnameFileName() string {
 	if root := GetRootDir(); root != "" {
 		return path.Join(root, hostnameFileName)
@@ -90,16 +107,11 @@ func getHostnameFileName() string {
 	return ""
 }
 
-func loadHostname(hostnameFile string) string {
-	file, err := os.Open(hostnameFile)
+func loadHostname(hostnameFileName string) (string, error) {
+	data, err := ioutil.ReadFile(hostnameFileName)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	scanner.Scan()
-	hostname := scanner.Text()
-
-	return hostname
+	return string(data), nil
 }

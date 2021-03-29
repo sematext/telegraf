@@ -105,7 +105,7 @@ func (s *Sematext) initProcessors() {
 	// add more processors as they are implemented
 	s.metricProcessors = []processors.MetricProcessor{
 		processors.NewToken(s.Token),
-		processors.NewHost(),
+		processors.NewHost(s.Log),
 	}
 	s.batchProcessors = []processors.BatchProcessor{
 		processors.NewHeartbeat(),

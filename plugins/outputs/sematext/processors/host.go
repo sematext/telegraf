@@ -4,6 +4,7 @@ import (
 	"github.com/influxdata/telegraf"
 	"io/ioutil"
 	"path"
+	"strings"
 	"sync"
 	"time"
 )
@@ -113,5 +114,6 @@ func loadHostname(hostnameFileName string) (string, error) {
 		return "", err
 	}
 
-	return string(data), nil
+	fullStr := string(data)
+	return strings.Split(fullStr, "\n")[0], nil
 }

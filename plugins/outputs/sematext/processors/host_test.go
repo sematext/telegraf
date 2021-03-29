@@ -25,11 +25,15 @@ func TestAdjustHostname(t *testing.T) {
 }
 
 func TestLoadHostname(t *testing.T) {
-	assert.Equal(t, "somehost001", loadHostname("./testdata/resolved-hostname"))
-	assert.Equal(t, "", loadHostname("./testdata/doesnt-exist"))
-	assert.Equal(t, "", loadHostname("/baddir"))
-	assert.Equal(t, "somehost001", loadHostname("./testdata/resolved-hostname-multiline"))
-	assert.Equal(t, "somehost001", loadHostname("./testdata/resolved-hostname-multiline2"))
+	assert.Equal(t, "somehost001", onlyHost(loadHostname("./testdata/resolved-hostname")))
+	assert.Equal(t, "", onlyHost(loadHostname("./testdata/doesnt-exist")))
+	assert.Equal(t, "", onlyHost(loadHostname("/baddir")))
+	assert.Equal(t, "somehost001", onlyHost(loadHostname("./testdata/resolved-hostname-multiline")))
+	assert.Equal(t, "somehost001", onlyHost(loadHostname("./testdata/resolved-hostname-multiline2")))
+}
+
+func onlyHost(host string, err error) string {
+	return host
 }
 
 func TestHostProcess(t *testing.T) {

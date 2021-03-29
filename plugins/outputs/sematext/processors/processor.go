@@ -7,6 +7,8 @@ import "github.com/influxdata/telegraf"
 type MetricProcessor interface {
 	// Process makes adjustments to a single metric instance to be compliant with Sematext backend
 	Process(metric telegraf.Metric) error
+
+	Close()
 }
 
 // BatchProcessor is used to execute actions on the level of a whole batch of metrics. Batch processors are run before
@@ -14,4 +16,6 @@ type MetricProcessor interface {
 // metric processors.
 type BatchProcessor interface {
 	Process(metrics []telegraf.Metric) ([]telegraf.Metric, error)
+
+	Close()
 }

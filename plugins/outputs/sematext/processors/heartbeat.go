@@ -53,6 +53,9 @@ func (h *Heartbeat) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error
 	return metrics, nil
 }
 
+// Close clears the resources processor used, no-op in this case
+func (h *Heartbeat) Close() {}
+
 func findMetricMinutes(metrics []telegraf.Metric) map[int64]int64 {
 	// holds a mapping between a minute and the "biggest" timestamp (in seconds) found for that minute
 	minMap := make(map[int64]int64)

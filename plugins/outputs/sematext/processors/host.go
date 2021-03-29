@@ -16,8 +16,10 @@ const (
 )
 
 type Host struct {
-	hostname string
-	lock     sync.RWMutex
+	hostname     string
+	lock         sync.RWMutex
+	reloadTicker *time.Ticker
+	stopReload   chan bool
 }
 
 // NewHost creates and initializes an instance of Host processor. It also starts periodic host reload goroutine.
@@ -30,13 +32,19 @@ func NewHost() *Host {
 
 	// if the Sematext dir (which might hold the hostname file) doesn't exist, no point in starting the goroutine
 	if hostnameFileName != "" {
+		h.reloadTicker = time.NewTicker(5 * time.Minute)
+		h.stopReload = make(chan bool, 1)
+
 		go func() {
 			for {
-				time.Sleep(2 * time.Minute)
-
-				h.lock.Lock()
-				loadHostname(hostnameFileName)
-				h.lock.Unlock()
+				select {
+				case <-h.stopReload:
+					return
+				case <-h.reloadTicker.C:
+					h.lock.Lock()
+					loadHostname(hostnameFileName)
+					h.lock.Unlock()
+				}
 			}
 		}()
 	}
@@ -53,6 +61,13 @@ func (h *Host) Process(metric telegraf.Metric) error {
 	adjustHostname(metric, h.hostname)
 
 	return nil
+}
+
+// Close clears the resources processor used
+func (h *Host) Close() {
+	if h.stopReload != nil {
+		h.stopReload <- true
+	}
 }
 
 func adjustHostname(metric telegraf.Metric, loadedHostname string) {

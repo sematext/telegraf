@@ -47,6 +47,15 @@ func (s *Sematext) Connect() error {
 // Close Closes the Sematext output
 func (s *Sematext) Close() error {
 	s.sender.Close()
+
+	for _, mp := range s.metricProcessors {
+		mp.Close()
+	}
+
+	for _, bp := range s.batchProcessors {
+		bp.Close()
+	}
+
 	return nil
 }
 
@@ -96,6 +105,7 @@ func (s *Sematext) initProcessors() {
 	// add more processors as they are implemented
 	s.metricProcessors = []processors.MetricProcessor{
 		processors.NewToken(s.Token),
+		processors.NewHost(),
 	}
 	s.batchProcessors = []processors.BatchProcessor{
 		processors.NewHeartbeat(),

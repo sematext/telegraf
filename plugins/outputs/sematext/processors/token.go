@@ -13,6 +13,9 @@ func (t *Token) Process(metric telegraf.Metric) error {
 	return nil
 }
 
+// Close clears the resources processor used, no-op in this case
+func (t *Token) Close() {}
+
 // NewToken creates a new token processor
 func NewToken(token string) *Token {
 	return &Token{

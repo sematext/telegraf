@@ -32,7 +32,7 @@ func TestLoadHostname(t *testing.T) {
 	assert.Equal(t, "somehost001", onlyHost(loadHostname("./testdata/resolved-hostname-multiline2")))
 }
 
-func onlyHost(host string, err error) string {
+func onlyHost(host string, _ error) string {
 	return host
 }
 

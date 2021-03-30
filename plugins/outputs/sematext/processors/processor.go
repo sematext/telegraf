@@ -13,7 +13,8 @@ type MetricProcessor interface {
 
 // BatchProcessor is used to execute actions on the level of a whole batch of metrics. Batch processors are run before
 // any Metric processors kick in, so metrics produced by a batch processor can count on further being decorated by
-// metric processors.
+// metric processors. Also, metrics batch processors work on are "original" Telegraf metrics without any Sematext
+// specific adjustments.
 type BatchProcessor interface {
 	Process(metrics []telegraf.Metric) ([]telegraf.Metric, error)
 

@@ -3,6 +3,7 @@ package processors
 import (
 	"fmt"
 	"github.com/influxdata/telegraf"
+	"github.com/influxdata/telegraf/plugins/outputs/sematext/sender"
 	"sync"
 )
 
@@ -44,15 +45,22 @@ type Metainfo struct {
 	token       string
 	sentMetrics map[string]*MetricMetainfo
 	lock        sync.Mutex
+
+	metainfoURL  string
+	senderConfig *sender.Config
+	sender       *sender.Sender
 }
 
 // NewMetainfo creates a new Metainfo processor
-func NewMetainfo(log telegraf.Logger, token string) *Metainfo {
+func NewMetainfo(log telegraf.Logger, token string, receiverURL string, senderConfig *sender.Config) *Metainfo {
 	sentMetricsMap := make(map[string]*MetricMetainfo)
 	return &Metainfo{
-		log:         log,
-		token:       token,
-		sentMetrics: sentMetricsMap,
+		log:          log,
+		token:        token,
+		sentMetrics:  sentMetricsMap,
+		metainfoURL:  receiverURL + "/write?db=metainfo",
+		senderConfig: senderConfig,
+		sender:       sender.NewSender(senderConfig),
 	}
 }
 
@@ -120,7 +128,7 @@ func buildMetainfo(token string, host string, metric *telegraf.Metric, field *te
 
 // Close clears the resources used by Metainfo processor
 func (m *Metainfo) Close() {
-	// TODO close http client
+	m.sender.Close()
 }
 
 func getSematextMetricType(metricType telegraf.ValueType) SematextMetricType {

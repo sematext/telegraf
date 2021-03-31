@@ -109,6 +109,7 @@ func (s *Sematext) initProcessors() {
 	}
 	s.batchProcessors = []processors.BatchProcessor{
 		processors.NewHeartbeat(),
+		processors.NewMetainfo(s.Log, s.Token, s.ReceiverURL, s.senderConfig),
 	}
 }
 

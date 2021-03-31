@@ -4,7 +4,14 @@ import (
 	"fmt"
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/sender"
+	"math/rand"
 	"sync"
+	"time"
+)
+
+const (
+	metainfoRetryIntervalSeconds = 60
+	maxMetainfoRetries           = 10
 )
 
 // MetricMetainfo contains metainfo about a single metric
@@ -29,6 +36,10 @@ const (
 	Gauge
 )
 
+func (s SematextMetricType) String() string {
+	return [...]string{"", "Counter", "Gauge"}[s]
+}
+
 // NumericType represents metric's data type
 type NumericType int
 
@@ -39,12 +50,18 @@ const (
 	Bool
 )
 
+func (s NumericType) String() string {
+	return [...]string{"", "Long", "Double", "Bool"}[s]
+}
+
 // Metainfo is a processor that extracts metainfo from telegraf metrics and sends it to Sematext backend
 type Metainfo struct {
 	log         telegraf.Logger
 	token       string
 	sentMetrics map[string]*MetricMetainfo
 	lock        sync.Mutex
+	sendChannel chan bool
+	serializer  *MetainfoSerializer
 
 	metainfoURL  string
 	senderConfig *sender.Config
@@ -58,9 +75,11 @@ func NewMetainfo(log telegraf.Logger, token string, receiverURL string, senderCo
 		log:          log,
 		token:        token,
 		sentMetrics:  sentMetricsMap,
+		sendChannel:  make(chan bool, 1),
 		metainfoURL:  receiverURL + "/write?db=metainfo",
 		senderConfig: senderConfig,
 		sender:       sender.NewSender(senderConfig),
+		serializer:   NewMetainfoSerializer(log),
 	}
 }
 
@@ -69,27 +88,88 @@ func (m *Metainfo) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error)
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
-	newMetrics := make([]*MetricMetainfo, 0)
+	newMetrics := make(map[string]*MetricMetainfo)
 
 	for _, metric := range metrics {
 		for _, field := range metric.FieldList() {
-			mInfo := processMetric(m.token, &metric, field, &m.sentMetrics)
+			mInfo, mKey := processMetric(m.token, &metric, field, &m.sentMetrics)
 			if mInfo != nil {
-				newMetrics = append(newMetrics, mInfo)
+				newMetrics[mKey] = mInfo
 			}
 		}
 	}
 
 	if len(newMetrics) > 0 {
-		// TODO send the metainfo
-		// TODO add newMetrics to sentMetrics (maybe right away, don't wait for goroutine to finish because of locks)
+		go m.sendMetainfo(newMetrics)
+
+		// add newMetrics to sentMetrics so they are not sent again from other goroutines
+		for k, v := range newMetrics {
+			m.sentMetrics[k] = v
+		}
+
 	}
 
 	return metrics, nil
 }
 
+func (m *Metainfo) sendMetainfo(newMetrics map[string]*MetricMetainfo) {
+	reqCounter := 0
+
+	mInfoSlice := make([]*MetricMetainfo, len(newMetrics))
+	for _, mInfo := range newMetrics {
+		mInfoSlice = append(mInfoSlice, mInfo)
+	}
+	body := m.serializer.Write(mInfoSlice)
+
+	for {
+		select {
+		case <-m.sendChannel:
+			return
+		default:
+			m.log.Infof("sending metainfo to Sematext endpoint %s", m.metainfoURL)
+			res, err := m.sender.Request("POST", m.metainfoURL, "text/plain; charset=utf-8", body)
+			reqCounter++
+			if err != nil {
+				// possibly non-recoverable, return without retrying
+				m.log.Errorf("can't send metainfo to Sematext endpoint %s, error: %v",
+					m.metainfoURL, err)
+				return
+			}
+			responseContent := response(res)
+			res.Body.Close()
+
+			success := res.StatusCode >= 200 && res.StatusCode < 300
+
+			if success {
+				m.log.Infof("successfully sent metainfo to Sematext endpoint %s, batch size : %d",
+					m.metainfoURL, len(newMetrics))
+				return
+			}
+
+			m.log.Errorf("can't send the metainfo to Sematext endpoint %s, response code: %d, response: %s",
+				m.metainfoURL, res.StatusCode, responseContent)
+
+			badRequest := res.StatusCode >= 400 && res.StatusCode < 500
+			if badRequest {
+				m.log.Infof("no retry for bad requests, response code was %d", res.StatusCode)
+				return
+			}
+
+			if reqCounter >= maxMetainfoRetries {
+				m.log.Warnf("max retries (%d) exceeded, cancelling the request permanently",
+					maxMetainfoRetries)
+				return
+			}
+
+			nextSleepIntervalSec := int32(reqCounter * metainfoRetryIntervalSeconds)
+			m.log.Infof("metainfo sending retry in %d seconds", nextSleepIntervalSec)
+			time.Sleep(time.Second * time.Duration(rand.Int31n(nextSleepIntervalSec)))
+		}
+	}
+}
+
 func processMetric(token string, metric *telegraf.Metric, field *telegraf.Field,
-	sentMetrics *map[string]*MetricMetainfo) *MetricMetainfo {
+	sentMetrics *map[string]*MetricMetainfo) (*MetricMetainfo, string) {
 	host, set := (*metric).GetTag(telegrafHostTag)
 	// skip if no host tag
 	if set {
@@ -97,18 +177,18 @@ func processMetric(token string, metric *telegraf.Metric, field *telegraf.Field,
 
 		_, set := (*sentMetrics)[key]
 		if !set {
-			return buildMetainfo(token, host, metric, field)
+			return buildMetainfo(token, host, metric, field), key
 		}
 	}
 
-	return nil
+	return nil, ""
 }
 
 func buildMetainfo(token string, host string, metric *telegraf.Metric, field *telegraf.Field) *MetricMetainfo {
 	semType := getSematextMetricType((*metric).Type())
 	numericType := getSematextNumericType(field)
 
-	if numericType == UnsupportedNumericType {
+	if numericType == UnsupportedNumericType || numericType == Bool {
 		return nil
 	}
 
@@ -128,6 +208,8 @@ func buildMetainfo(token string, host string, metric *telegraf.Metric, field *te
 
 // Close clears the resources used by Metainfo processor
 func (m *Metainfo) Close() {
+	// close the channel to metainfo sender goroutines + close the sender
+	close(m.sendChannel)
 	m.sender.Close()
 }
 

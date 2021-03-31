@@ -16,20 +16,19 @@ func TestProcessMetric(t *testing.T) {
 		map[string]interface{}{"disk.used": float64(12.34), "disk.free": int64(55), "disk.size": uint64(777)},
 		now)
 
-	sentMetrics := make(map[string]*MetricMetainfo, 0)
+	sentMetrics := make(map[string]*MetricMetainfo)
 
-	mInfo := processMetric("aaa", &m, getField(m, "disk.used"), &sentMetrics)
-	mKey := buildMetricKey("somehost", "os", "disk.used")
+	mInfo, mKey := processMetric("aaa", &m, getField(m, "disk.used"), &sentMetrics)
 	assert.NotNil(t, mInfo)
 
 	sentMetrics[mKey] = mInfo
 	// once it is in sentMetrics, it shouldn't be created again
-	mInfo = processMetric("aaa", &m, getField(m, "disk.used"), &sentMetrics)
+	mInfo, mKey = processMetric("aaa", &m, getField(m, "disk.used"), &sentMetrics)
 	assert.Nil(t, mInfo)
 
 	sentMetrics[mKey] = nil
 	m.RemoveTag(telegrafHostTag)
-	mInfo = processMetric("aaa", &m, getField(m, "disk.used"), &sentMetrics)
+	mInfo, _ = processMetric("aaa", &m, getField(m, "disk.used"), &sentMetrics)
 	assert.Nil(t, mInfo)
 }
 

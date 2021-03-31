@@ -23,13 +23,15 @@ type LinePerMetricSerializer struct {
 }
 
 // NewLinePerMetricSerializer creates an instance of NewLinePerMetricSerializer
-func NewLinePerMetricSerializer() *LinePerMetricSerializer {
-	return &LinePerMetricSerializer{}
+func NewLinePerMetricSerializer(log telegraf.Logger) *LinePerMetricSerializer {
+	return &LinePerMetricSerializer{
+		log: log,
+	}
 }
 
 // NewMetricSerializer creates and instance serializer which should be used to produce Sematext metrics format
-func NewMetricSerializer() MetricSerializer {
-	return &LinePerMetricSerializer{}
+func NewMetricSerializer(log telegraf.Logger) MetricSerializer {
+	return NewLinePerMetricSerializer(log)
 }
 
 // Write serializes input metrics array according to Sematext variant of influx line protocol. The output is returned

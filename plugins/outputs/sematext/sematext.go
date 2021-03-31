@@ -92,7 +92,7 @@ func (s *Sematext) Init() error {
 
 	s.initProcessors()
 
-	s.serializer = serializer.NewMetricSerializer()
+	s.serializer = serializer.NewMetricSerializer(s.Log)
 
 	s.Log.Infof("Sematext output started with Token=%s, ReceiverUrl=%s, ProxyServer=%s", s.Token, s.ReceiverURL,
 		s.ProxyServer)

@@ -80,7 +80,6 @@ var (
 		"mongo.connections_total_created": "mongo.network.connections.total",
 		"net_in_bytes":                    "mongo.network.transfer.rx.rate",
 		"net_out_bytes":                   "mongo.network.transfer.tx.rate",
-		"mongo.open_connections":          "mongo.network.requests",
 	}
 )
 

@@ -92,7 +92,7 @@ func (m *Metainfo) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error)
 
 	for _, metric := range metrics {
 		for _, field := range metric.FieldList() {
-			mInfo, mKey := processMetric(m.token, &metric, field, m.sentMetrics)
+			mInfo, mKey := processMetric(m.token, metric, field, m.sentMetrics)
 			if mInfo != nil {
 				newMetrics[mKey] = mInfo
 			}
@@ -168,12 +168,12 @@ func (m *Metainfo) sendMetainfo(newMetrics map[string]*MetricMetainfo) {
 	}
 }
 
-func processMetric(token string, metric *telegraf.Metric, field *telegraf.Field,
+func processMetric(token string, metric telegraf.Metric, field *telegraf.Field,
 	sentMetrics map[string]*MetricMetainfo) (*MetricMetainfo, string) {
-	host, set := (*metric).GetTag(telegrafHostTag)
+	host, set := metric.GetTag(telegrafHostTag)
 	// skip if no host tag
 	if set {
-		key := buildMetricKey(host, (*metric).Name(), field.Key)
+		key := buildMetricKey(host, metric.Name(), field.Key)
 
 		_, set := sentMetrics[key]
 		if !set {
@@ -184,20 +184,20 @@ func processMetric(token string, metric *telegraf.Metric, field *telegraf.Field,
 	return nil, ""
 }
 
-func buildMetainfo(token string, host string, metric *telegraf.Metric, field *telegraf.Field) *MetricMetainfo {
-	semType := getSematextMetricType((*metric).Type())
+func buildMetainfo(token string, host string, metric telegraf.Metric, field *telegraf.Field) *MetricMetainfo {
+	semType := getSematextMetricType(metric.Type())
 	numericType := getSematextNumericType(field)
 
 	if numericType == UnsupportedNumericType || numericType == Bool {
 		return nil
 	}
 
-	label := fmt.Sprintf("%s.%s", (*metric).Name(), field.Key)
+	label := fmt.Sprintf("%s.%s", metric.Name(), field.Key)
 
 	return &MetricMetainfo{
 		token:       token,
 		name:        field.Key,
-		namespace:   (*metric).Name(),
+		namespace:   metric.Name(),
 		semType:     semType,
 		numericType: numericType,
 		label:       label,

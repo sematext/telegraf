@@ -18,17 +18,17 @@ func TestProcessMetric(t *testing.T) {
 
 	sentMetrics := make(map[string]*MetricMetainfo)
 
-	mInfo, mKey := processMetric("aaa", &m, getField(m, "disk.used"), sentMetrics)
+	mInfo, mKey := processMetric("aaa", m, getField(m, "disk.used"), sentMetrics)
 	assert.NotNil(t, mInfo)
 
 	sentMetrics[mKey] = mInfo
 	// once it is in sentMetrics, it shouldn't be created again
-	mInfo, mKey = processMetric("aaa", &m, getField(m, "disk.used"), sentMetrics)
+	mInfo, mKey = processMetric("aaa", m, getField(m, "disk.used"), sentMetrics)
 	assert.Nil(t, mInfo)
 
 	sentMetrics[mKey] = nil
 	m.RemoveTag(telegrafHostTag)
-	mInfo, _ = processMetric("aaa", &m, getField(m, "disk.used"), sentMetrics)
+	mInfo, _ = processMetric("aaa", m, getField(m, "disk.used"), sentMetrics)
 	assert.Nil(t, mInfo)
 }
 
@@ -40,7 +40,7 @@ func TestBuildMetainfo(t *testing.T) {
 		map[string]interface{}{"disk.used": float64(12.34), "disk.free": int64(55), "disk.size": uint64(777)},
 		now)
 
-	mInfo := buildMetainfo("aaa", "host", &m, getField(m, "disk.used"))
+	mInfo := buildMetainfo("aaa", "host", m, getField(m, "disk.used"))
 
 	assert.Equal(t, "aaa", mInfo.token)
 	assert.Equal(t, "host", mInfo.host)
@@ -56,7 +56,7 @@ func TestBuildMetainfo(t *testing.T) {
 		map[string]string{telegrafHostTag: "somehost", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34), "disk.free": int64(55), "disk.size": uint64(777)},
 		now, telegraf.Counter)
-	mInfo = buildMetainfo("aaa", "host", &m, getField(m, "disk.used"))
+	mInfo = buildMetainfo("aaa", "host", m, getField(m, "disk.used"))
 
 	assert.Equal(t, Counter, mInfo.semType)
 
@@ -65,7 +65,7 @@ func TestBuildMetainfo(t *testing.T) {
 		map[string]string{telegrafHostTag: "somehost", "os.disk": "sda1"},
 		map[string]interface{}{"disk.state": "active"},
 		now, telegraf.Counter)
-	mInfo = buildMetainfo("aaa", "host", &m, getField(m, "disk.state"))
+	mInfo = buildMetainfo("aaa", "host", m, getField(m, "disk.state"))
 	assert.Nil(t, mInfo)
 }
 

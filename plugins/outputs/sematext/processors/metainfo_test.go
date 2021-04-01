@@ -18,17 +18,17 @@ func TestProcessMetric(t *testing.T) {
 
 	sentMetrics := make(map[string]*MetricMetainfo)
 
-	mInfo, mKey := processMetric("aaa", &m, getField(m, "disk.used"), &sentMetrics)
+	mInfo, mKey := processMetric("aaa", &m, getField(m, "disk.used"), sentMetrics)
 	assert.NotNil(t, mInfo)
 
 	sentMetrics[mKey] = mInfo
 	// once it is in sentMetrics, it shouldn't be created again
-	mInfo, mKey = processMetric("aaa", &m, getField(m, "disk.used"), &sentMetrics)
+	mInfo, mKey = processMetric("aaa", &m, getField(m, "disk.used"), sentMetrics)
 	assert.Nil(t, mInfo)
 
 	sentMetrics[mKey] = nil
 	m.RemoveTag(telegrafHostTag)
-	mInfo, _ = processMetric("aaa", &m, getField(m, "disk.used"), &sentMetrics)
+	mInfo, _ = processMetric("aaa", &m, getField(m, "disk.used"), sentMetrics)
 	assert.Nil(t, mInfo)
 }
 

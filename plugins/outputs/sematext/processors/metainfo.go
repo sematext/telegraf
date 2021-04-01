@@ -92,7 +92,7 @@ func (m *Metainfo) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error)
 
 	for _, metric := range metrics {
 		for _, field := range metric.FieldList() {
-			mInfo, mKey := processMetric(m.token, &metric, field, &m.sentMetrics)
+			mInfo, mKey := processMetric(m.token, &metric, field, m.sentMetrics)
 			if mInfo != nil {
 				newMetrics[mKey] = mInfo
 			}
@@ -115,7 +115,7 @@ func (m *Metainfo) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error)
 func (m *Metainfo) sendMetainfo(newMetrics map[string]*MetricMetainfo) {
 	reqCounter := 0
 
-	mInfoSlice := make([]*MetricMetainfo, len(newMetrics))
+	mInfoSlice := make([]*MetricMetainfo, 0, len(newMetrics))
 	for _, mInfo := range newMetrics {
 		mInfoSlice = append(mInfoSlice, mInfo)
 	}
@@ -169,13 +169,13 @@ func (m *Metainfo) sendMetainfo(newMetrics map[string]*MetricMetainfo) {
 }
 
 func processMetric(token string, metric *telegraf.Metric, field *telegraf.Field,
-	sentMetrics *map[string]*MetricMetainfo) (*MetricMetainfo, string) {
+	sentMetrics map[string]*MetricMetainfo) (*MetricMetainfo, string) {
 	host, set := (*metric).GetTag(telegrafHostTag)
 	// skip if no host tag
 	if set {
 		key := buildMetricKey(host, (*metric).Name(), field.Key)
 
-		_, set := (*sentMetrics)[key]
+		_, set := sentMetrics[key]
 		if !set {
 			return buildMetainfo(token, host, metric, field), key
 		}

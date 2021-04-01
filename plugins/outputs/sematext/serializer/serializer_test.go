@@ -36,9 +36,10 @@ func TestWrite(t *testing.T) {
 		now)
 
 	metrics = []telegraf.Metric{m}
-
 	assert.Equal(t,
-		fmt.Sprintf("system,os.host=hostname,token=token uptime_format=\"18 days, 22:37\" %d\n", now.UnixNano()),
+		// strings are temporarily filtered out (until Sematext backend gets support)
+		// fmt.Sprintf("system,os.host=hostname,token=token uptime_format=\"18 days, 22:37\" %d\n", now.UnixNano()),
+		"",
 		string(serializer.Write(metrics)))
 }
 

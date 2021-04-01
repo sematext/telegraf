@@ -123,7 +123,9 @@ func serializeMetric(key string, value interface{}) string {
 	var metricValue string
 	switch v := value.(type) {
 	case string:
-		metricValue = fmt.Sprintf("\"%s\"", stringFieldEscape(v))
+		// temporarily made string values ignorable (until Sematext backend starts supporting them)
+		// metricValue = fmt.Sprintf("\"%s\"", stringFieldEscape(v))
+		return ""
 	case bool:
 		metricValue = strconv.FormatBool(v)
 	case float64:

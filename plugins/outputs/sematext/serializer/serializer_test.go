@@ -28,6 +28,18 @@ func TestWrite(t *testing.T) {
 	assert.Equal(t,
 		fmt.Sprintf("os,os.host=hostname disk.size=777i %d\n", now.UnixNano()),
 		string(serializer.Write(metrics)))
+
+	m, _ = metric.New(
+		"system",
+		map[string]string{"os.host": "hostname", "token": "token"},
+		map[string]interface{}{"uptime_format": "18 days, 22:37"},
+		now)
+
+	metrics = []telegraf.Metric{m}
+
+	assert.Equal(t,
+		fmt.Sprintf("system,os.host=hostname,token=token uptime_format=\"18 days, 22:37\" %d\n", now.UnixNano()),
+		string(serializer.Write(metrics)))
 }
 
 func TestWriteNoTags(t *testing.T) {

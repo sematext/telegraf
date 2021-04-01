@@ -123,7 +123,7 @@ func serializeMetric(key string, value interface{}) string {
 	var metricValue string
 	switch v := value.(type) {
 	case string:
-		metricValue = v
+		metricValue = fmt.Sprintf("\"%s\"", stringFieldEscape(v))
 	case bool:
 		metricValue = strconv.FormatBool(v)
 	case float64:

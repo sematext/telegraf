@@ -1,11 +1,12 @@
 package processors
 
 import (
+	"testing"
+	"time"
+
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/metric"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestBuildHeartbeatMetric(t *testing.T) {
@@ -23,7 +24,8 @@ func TestBuildHeartbeatMetric(t *testing.T) {
 
 func TestHeartbeatNeeded(t *testing.T) {
 	minute := int64(11)
-	h := NewHeartbeat()
+	bp := NewHeartbeat()
+	h := bp.(*Heartbeat)
 	assert.Equal(t, true, h.heartbeatNeeded(minute))
 
 	h.injectedMinutes[minute] = true
@@ -34,7 +36,8 @@ func TestHeartbeatNeeded(t *testing.T) {
 }
 
 func TestAddHeartbeat(t *testing.T) {
-	h := NewHeartbeat()
+	bp := NewHeartbeat()
+	h := bp.(*Heartbeat)
 	now := time.Now()
 	currentMinute := getEpochMinute(now)
 
@@ -50,7 +53,8 @@ func TestAddHeartbeat(t *testing.T) {
 }
 
 func TestProcess(t *testing.T) {
-	h := NewHeartbeat()
+	bp := NewHeartbeat()
+	h := bp.(*Heartbeat)
 	metrics := make([]telegraf.Metric, 0, 2)
 
 	var err error
@@ -98,7 +102,8 @@ func TestFindMetricMinutes(t *testing.T) {
 }
 
 func TestResetMap(t *testing.T) {
-	h := NewHeartbeat()
+	bp := NewHeartbeat()
+	h := bp.(*Heartbeat)
 	h.injectedMinutes[123] = true
 	h.mapResetDay = 123
 

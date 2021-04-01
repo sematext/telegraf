@@ -17,7 +17,7 @@ func (t *Token) Process(metric telegraf.Metric) error {
 func (t *Token) Close() {}
 
 // NewToken creates a new token processor
-func NewToken(token string) *Token {
+func NewToken(token string) MetricProcessor {
 	return &Token{
 		Token: token,
 	}

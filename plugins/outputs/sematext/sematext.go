@@ -2,13 +2,14 @@ package sematext
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/outputs"
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/processors"
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/sender"
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/serializer"
-	"net/http"
-	"net/url"
 )
 
 const (
@@ -108,6 +109,7 @@ func (s *Sematext) initProcessors() {
 		processors.NewHost(s.Log),
 	}
 	s.batchProcessors = []processors.BatchProcessor{
+		processors.NewRename(),
 		processors.NewHeartbeat(),
 	}
 }

@@ -78,10 +78,16 @@ func (s *Sematext) Init() error {
 		s.ReceiverURL = defaultSematextMetricsReceiverURL
 	}
 
-	proxyURL, err := url.Parse(s.ProxyServer)
-	if err != nil {
-		return fmt.Errorf("invalid url %s for the proxy server: %v", s.ProxyServer, err)
+	var proxyURL *url.URL = nil
+
+	if s.ProxyServer != "" {
+		var err error
+		proxyURL, err = url.Parse(s.ProxyServer)
+		if err != nil {
+			return fmt.Errorf("invalid url %s for the proxy server: %v", s.ProxyServer, err)
+		}
 	}
+
 	s.senderConfig = &sender.Config{
 		ProxyURL: proxyURL,
 		Username: s.Username,

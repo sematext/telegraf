@@ -60,7 +60,7 @@ func NewSender(config *Config) *Sender {
 // getProxyHeader creates proxy authentication header based on config settings
 func getProxyHeader(config *Config) string {
 	var proxyAuth string
-	if config.ProxyURL != nil && len(config.Username) > 0 && len(config.Password) > 0 {
+	if len(config.Username) > 0 && len(config.Password) > 0 {
 		auth := fmt.Sprintf("%s:%s", config.Username, config.Password)
 		proxyAuth = fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(auth)))
 	}

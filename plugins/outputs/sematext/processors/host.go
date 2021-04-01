@@ -85,6 +85,7 @@ func (h *Host) Close() {
 	if h.stopReload != nil {
 		h.stopReload <- true
 	}
+	h.reloadTicker.Stop()
 }
 
 func adjustHostname(metric telegraf.Metric, loadedHostname string) {

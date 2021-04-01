@@ -78,7 +78,7 @@ func (s *Sematext) Init() error {
 		s.ReceiverURL = defaultSematextMetricsReceiverURL
 	}
 
-	var proxyURL *url.URL = nil
+	var proxyURL *url.URL
 
 	if s.ProxyServer != "" {
 		var err error
@@ -133,13 +133,17 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 	if len(processedMetrics) > 0 {
 		body := s.serializer.Write(processedMetrics)
 
+		s.Log.Debugf("Sending metrics to %s : %s", s.metricsURL, body)
+
 		res, err := s.sender.Request("POST", s.metricsURL, "text/plain; charset=utf-8", body)
 		if err != nil {
 			// TODO whether we return an error or not should depend on whether there should be a retry
-			s.Log.Errorf("error while sending to %s : %s", s.ReceiverURL, err.Error())
+			s.Log.Errorf("error while sending to %s : %s", s.metricsURL, err.Error())
 			return err
 		}
 		defer res.Body.Close()
+
+		s.Log.Debugf("Sending metrics to %s response status code: %d", s.metricsURL, res.StatusCode)
 
 		success := res.StatusCode >= 200 && res.StatusCode < 300
 		if !success {
@@ -191,7 +195,7 @@ func (s *Sematext) processMetrics(metrics []telegraf.Metric) ([]telegraf.Metric,
 // logAndCreateError logs the error message and forms an error object
 func (s *Sematext) logAndCreateError(res *http.Response) error {
 	errorMsg := fmt.Sprintf("received %d status code, message = '%s' while sending to %s", res.StatusCode,
-		res.Status, s.ReceiverURL)
+		res.Status, s.metricsURL)
 	s.Log.Error(errorMsg)
 	return fmt.Errorf(errorMsg)
 }

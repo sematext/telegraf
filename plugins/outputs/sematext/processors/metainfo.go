@@ -69,7 +69,7 @@ type Metainfo struct {
 }
 
 // NewMetainfo creates a new Metainfo processor
-func NewMetainfo(log telegraf.Logger, token string, receiverURL string, senderConfig *sender.Config) *Metainfo {
+func NewMetainfo(log telegraf.Logger, token string, receiverURL string, senderConfig *sender.Config) BatchProcessor {
 	sentMetricsMap := make(map[string]*MetricMetainfo)
 	return &Metainfo{
 		log:          log,

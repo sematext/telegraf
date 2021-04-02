@@ -8,6 +8,8 @@ var (
 	measurementReplaces = map[string]string{
 		"phpfpm":  "php",
 		"mongodb": "mongo",
+		"apache":  "apache",
+		"nginx":   "nginx",
 	}
 	fieldReplaces = map[string]string{
 		// apache
@@ -95,9 +97,10 @@ func NewRename() BatchProcessor { return &Rename{} }
 func (r *Rename) Process(points []telegraf.Metric) ([]telegraf.Metric, error) {
 	for _, point := range points {
 		replace, ok := measurementReplaces[point.Name()]
-		if ok {
-			point.SetName(replace)
+		if !ok {
+			continue
 		}
+		point.SetName(replace)
 		for _, field := range point.FieldList() {
 			key := point.Name() + "." + field.Key
 			replace, ok := fieldReplaces[key]

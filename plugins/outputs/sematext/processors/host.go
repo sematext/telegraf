@@ -1,12 +1,13 @@
 package processors
 
 import (
-	"github.com/influxdata/telegraf"
 	"io/ioutil"
 	"path"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/influxdata/telegraf"
 )
 
 const (
@@ -24,7 +25,7 @@ type Host struct {
 }
 
 // NewHost creates and initializes an instance of Host processor. It also starts periodic host reload goroutine.
-func NewHost(log telegraf.Logger) *Host {
+func NewHost(log telegraf.Logger) MetricProcessor {
 	// do the initial load before spawning a goroutine which will periodically reload the hostname
 	hostnameFileName := getHostnameFileName()
 

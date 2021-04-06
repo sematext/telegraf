@@ -2,6 +2,9 @@ package sematext
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/plugins/outputs"
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/processors"
@@ -116,6 +119,7 @@ func (s *Sematext) initProcessors() {
 		processors.NewHandleCounter(),
 	}
 	s.batchProcessors = []processors.BatchProcessor{
+		processors.NewRename(),
 		processors.NewHeartbeat(),
 		processors.NewMetainfo(s.Log, s.Token, s.ReceiverURL, s.senderConfig),
 	}

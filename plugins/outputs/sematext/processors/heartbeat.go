@@ -1,10 +1,11 @@
 package processors
 
 import (
-	"github.com/influxdata/telegraf"
-	"github.com/influxdata/telegraf/metric"
 	"sync"
 	"time"
+
+	"github.com/influxdata/telegraf"
+	"github.com/influxdata/telegraf/metric"
 )
 
 const (
@@ -23,7 +24,7 @@ type Heartbeat struct {
 	lock            sync.Mutex
 }
 
-func NewHeartbeat() *Heartbeat {
+func NewHeartbeat() BatchProcessor {
 	return &Heartbeat{
 		injectedMinutes: make(map[int64]bool),
 	}

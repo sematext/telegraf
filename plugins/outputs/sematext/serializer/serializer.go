@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/influxdata/telegraf"
+	"github.com/influxdata/telegraf/plugins/outputs/sematext/tags"
 	"math"
 	"sort"
 	"strconv"
@@ -19,13 +20,15 @@ type MetricSerializer interface {
 // LinePerMetricSerializer provides simple implementation which writes each metric into a new line. The logic is simpler
 // and lighter, but the resulting output will be bigger.
 type LinePerMetricSerializer struct {
-	log telegraf.Logger
+	log             telegraf.Logger
+	notSerializable map[string]bool
 }
 
 // NewLinePerMetricSerializer creates an instance of NewLinePerMetricSerializer
 func NewLinePerMetricSerializer(log telegraf.Logger) *LinePerMetricSerializer {
 	return &LinePerMetricSerializer{
-		log: log,
+		log:             log,
+		notSerializable: map[string]bool{tags.SematextProcessedTag: true},
 	}
 }
 
@@ -46,7 +49,7 @@ func (s *LinePerMetricSerializer) Write(metrics []telegraf.Metric) []byte {
 			continue
 		}
 
-		serializedTags := serializeTags(metric.Tags())
+		serializedTags := serializeTags(metric.Tags(), s.notSerializable)
 		serializedMetrics := serializeMetrics(metric)
 		serializedTimestamp := strconv.FormatInt(metric.Time().UnixNano(), 10)
 
@@ -70,7 +73,7 @@ func (s *LinePerMetricSerializer) Write(metrics []telegraf.Metric) []byte {
 	return output.Bytes()
 }
 
-func serializeTags(tags map[string]string) string {
+func serializeTags(tags map[string]string, notSerializable map[string]bool) string {
 	var serializedTags strings.Builder
 
 	// make tag order sorted
@@ -81,6 +84,10 @@ func serializeTags(tags map[string]string) string {
 	sort.Strings(sortedTagKeys)
 
 	for _, tagKey := range sortedTagKeys {
+		if _, set := notSerializable[tagKey]; set {
+			continue
+		}
+
 		tagValue := tags[tagKey]
 		if serializedTags.Len() > 0 {
 			serializedTags.WriteString(",")

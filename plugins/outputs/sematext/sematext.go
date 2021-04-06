@@ -113,6 +113,7 @@ func (s *Sematext) initProcessors() {
 	s.metricProcessors = []processors.MetricProcessor{
 		processors.NewToken(s.Token),
 		processors.NewHost(s.Log),
+		processors.NewHandleCounter(),
 	}
 	s.batchProcessors = []processors.BatchProcessor{
 		processors.NewHeartbeat(),

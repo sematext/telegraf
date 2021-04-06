@@ -7,6 +7,7 @@ import (
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/processors"
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/sender"
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/serializer"
+	"github.com/influxdata/telegraf/plugins/outputs/sematext/tags"
 	"net/http"
 	"net/url"
 )
@@ -159,6 +160,11 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 
 // processMetrics returns an error only when the whole batch of metrics should be discarded
 func (s *Sematext) processMetrics(metrics []telegraf.Metric) ([]telegraf.Metric, error) {
+	if metricsAlreadyProcessed(metrics) {
+		// in case some batch was fully processed before, we don't want to process it once again
+		return metrics, nil
+	}
+
 	for _, p := range s.batchProcessors {
 		var err error
 		metrics, err = p.Process(metrics)
@@ -173,21 +179,51 @@ func (s *Sematext) processMetrics(metrics []telegraf.Metric) ([]telegraf.Metric,
 
 	for _, metric := range metrics {
 		metricOk := true
-		for _, p := range s.metricProcessors {
-			err := p.Process(metric)
 
-			if err != nil {
-				// log the message, mark the metric to be skipped, skip other processors
-				s.Log.Warnf("can't process metric: %s in Sematext output, error : %s", metric, err.Error())
-				metricOk = false
-				break
+		// don't process the metrics that were already processed before
+		if !metricAlreadyProcessed(metric) {
+			for _, p := range s.metricProcessors {
+				err := p.Process(metric)
+
+				if err != nil {
+					// log the message, mark the metric to be skipped, skip other processors
+					s.Log.Warnf("can't process metric: %s in Sematext output, error : %s", metric, err.Error())
+					metricOk = false
+					break
+				}
 			}
 		}
+
 		if metricOk {
 			processedMetrics = append(processedMetrics, metric)
 		}
 	}
+
+	markMetricsProcessed(processedMetrics)
+
 	return processedMetrics, nil
+}
+
+func metricsAlreadyProcessed(metrics []telegraf.Metric) bool {
+	// return that batch hasn't been processed yet if any of its metrics hasn't been processed
+	for _, m := range metrics {
+		if metricAlreadyProcessed(m) {
+			return false
+		}
+	}
+
+	return true
+}
+
+func metricAlreadyProcessed(metric telegraf.Metric) bool {
+	_, processed := metric.GetTag(tags.SematextProcessedTag)
+	return processed
+}
+
+func markMetricsProcessed(metrics []telegraf.Metric) {
+	for _, m := range metrics {
+		m.AddTag(tags.SematextProcessedTag, tags.SematextProcessedTag)
+	}
 }
 
 // TODO may not be needed as we have to rework how retry logic works depending on response status codes; sometimes

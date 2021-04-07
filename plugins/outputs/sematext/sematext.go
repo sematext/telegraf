@@ -11,8 +11,6 @@ import (
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/sender"
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/serializer"
 	"github.com/influxdata/telegraf/plugins/outputs/sematext/tags"
-	"net/http"
-	"net/url"
 )
 
 const (
@@ -119,6 +117,7 @@ func (s *Sematext) initProcessors() {
 		processors.NewHandleCounter(),
 	}
 	s.batchProcessors = []processors.BatchProcessor{
+		// rename processor has to run before metainfo processor to ensure metainfo processor uses final metric names
 		processors.NewRename(),
 		processors.NewHeartbeat(),
 		processors.NewMetainfo(s.Log, s.Token, s.ReceiverURL, s.senderConfig),

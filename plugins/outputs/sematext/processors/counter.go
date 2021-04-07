@@ -116,15 +116,14 @@ func calculateDelta(prevValue interface{}, currValue interface{}) interface{} {
 				delta = 0
 			}
 			return delta
-		} else {
-			return 0.0
 		}
+
+		return 0.0
 	case uint64:
-		delta := currValue.(uint64) - prevValue.(uint64)
-		if delta < 0 {
-			delta = 0
+		if currValue.(uint64) < prevValue.(uint64) {
+			return 0
 		}
-		return delta
+		return currValue.(uint64) - prevValue.(uint64)
 	case int64:
 		delta := currValue.(int64) - prevValue.(int64)
 		if delta < 0 {

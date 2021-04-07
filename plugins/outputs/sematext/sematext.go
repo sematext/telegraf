@@ -154,12 +154,12 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 		badRequest := res.StatusCode >= 400 && res.StatusCode < 500
 
 		if !success {
-			errorMsg := fmt.Sprintf("received %d status code, message = '%s' while sending to %s",
+			errorMsg := fmt.Sprintf("received %d status code, message = %q while sending to %s",
 				res.StatusCode, res.Status, s.metricsURL)
 
 			if badRequest {
 				// shouldn't be re-sent as bad request will continue to be a bad request
-				s.Log.Error(errorMsg + " - request will be dropped")
+				s.Log.Errorf("%s - request will be dropped", errorMsg)
 				return nil
 			}
 

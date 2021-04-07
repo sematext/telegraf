@@ -2,7 +2,6 @@ package sematext
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"github.com/influxdata/telegraf"
@@ -142,7 +141,8 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 
 		res, err := s.sender.Request("POST", s.metricsURL, "text/plain; charset=utf-8", body)
 		if err != nil {
-			// TODO whether we return an error or not should depend on whether there should be a retry
+			// error will happen in case of e.g. network connectivity issues; it is unrelated to response code and
+			// therefore it is OK to retry it
 			s.Log.Errorf("error while sending to %s : %s", s.metricsURL, err.Error())
 			return err
 		}
@@ -151,11 +151,20 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 		s.Log.Debugf("Sending metrics to %s response status code: %d", s.metricsURL, res.StatusCode)
 
 		success := res.StatusCode >= 200 && res.StatusCode < 300
+		badRequest := res.StatusCode >= 400 && res.StatusCode < 500
+
 		if !success {
-			// TODO in the future, consider handling the retries for bad-request cases
-			// badRequest := res.StatusCode >= 400 && res.StatusCode < 500
-			// if !badRequest {
-			return s.logAndCreateError(res)
+			errorMsg := fmt.Sprintf("received %d status code, message = %q while sending to %s",
+				res.StatusCode, res.Status, s.metricsURL)
+
+			if badRequest {
+				// shouldn't be re-sent as bad request will continue to be a bad request
+				s.Log.Errorf("%s - request will be dropped", errorMsg)
+				return nil
+			}
+
+			// otherwise it is some temporary error from the backend and we should retry
+			return fmt.Errorf(errorMsg)
 		}
 	}
 
@@ -228,16 +237,6 @@ func markMetricsProcessed(metrics []telegraf.Metric) {
 	for _, m := range metrics {
 		m.AddTag(tags.SematextProcessedTag, tags.SematextProcessedTag)
 	}
-}
-
-// TODO may not be needed as we have to rework how retry logic works depending on response status codes; sometimes
-// we'll log the message, sometimes return an error, possibly never have to do both
-// logAndCreateError logs the error message and forms an error object
-func (s *Sematext) logAndCreateError(res *http.Response) error {
-	errorMsg := fmt.Sprintf("received %d status code, message = '%s' while sending to %s", res.StatusCode,
-		res.Status, s.metricsURL)
-	s.Log.Error(errorMsg)
-	return fmt.Errorf(errorMsg)
 }
 
 func init() {

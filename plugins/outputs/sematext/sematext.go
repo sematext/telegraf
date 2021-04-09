@@ -220,7 +220,7 @@ func (s *Sematext) processMetrics(metrics []telegraf.Metric) ([]telegraf.Metric,
 func metricsAlreadyProcessed(metrics []telegraf.Metric) bool {
 	// return that batch hasn't been processed yet if any of its metrics hasn't been processed
 	for _, m := range metrics {
-		if metricAlreadyProcessed(m) {
+		if !metricAlreadyProcessed(m) {
 			return false
 		}
 	}

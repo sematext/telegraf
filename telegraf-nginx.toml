@@ -1,0 +1,10 @@
+[[inputs.nginx]]
+  ## An array of Nginx stub_status URI to gather stats.
+  urls = ["http://172.17.0.2/nginx_status"]
+
+
+[[outputs.sematext]]
+  receiver_url = "https://spm-receiver.sematext.com"
+  token = "f5a23242-6fdd-4435-9b60-1b52cc9211a4"
+  metric_batch_size = 200
+

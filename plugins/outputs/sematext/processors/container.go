@@ -36,19 +36,19 @@ func NewContainerTags() MetricProcessor {
 	tags := make(map[string]string)
 	tags[CONTAINER_NAME_TAG] = os.Getenv(CONTAINER_NAME_ENV_NAME)
 	tags[CONTAINER_ID_TAG] = os.Getenv(CONTAINER_ID_ENV_NAME)
-	tags[CONTAINER_IMAGE_NAME_TAG] = os.Getenv(CONTAINER_IMAGE_NAME_TAG)
-	tags[CONTAINER_IMAGE_TAG_ENV_NAME] = os.Getenv(CONTAINER_IMAGE_TAG_TAG)
-	tags[CONTAINER_IMAGE_DIGEST_ENV_NAME] = os.Getenv(CONTAINER_IMAGE_DIGEST_TAG)
+	tags[CONTAINER_IMAGE_NAME_TAG] = os.Getenv(CONTAINER_IMAGE_NAME_ENV_NAME)
+	tags[CONTAINER_IMAGE_TAG_TAG] = os.Getenv(CONTAINER_IMAGE_TAG_ENV_NAME)
+	tags[CONTAINER_IMAGE_DIGEST_TAG] = os.Getenv(CONTAINER_IMAGE_DIGEST_ENV_NAME)
 
-	tags[K8S_POD_ENV_NAME] = os.Getenv(K8S_POD_NAME_TAG)
-	tags[K8S_NAMESPACE_ENV_NAME] = os.Getenv(K8S_NAMESPACE_ID_TAG)
-	tags[K8S_CLUSTER_ENV_NAME] = os.Getenv(K8S_CLUSTER_TAG)
+	tags[K8S_POD_NAME_TAG] = os.Getenv(K8S_POD_ENV_NAME)
+	tags[K8S_NAMESPACE_ID_TAG] = os.Getenv(K8S_NAMESPACE_ENV_NAME)
+	tags[K8S_CLUSTER_TAG] = os.Getenv(K8S_CLUSTER_ENV_NAME)
 	return &ContainerTags{
 		tags: tags,
 	}
 }
 
-// Process is a method where Heartbeat processor checks whether a heartbeat metric is needed and injects it if so
+// Process is a method where ContainerTags processor injects container tags from env variables to metric
 func (c *ContainerTags) Process(metric telegraf.Metric) error {
 	for tag, value := range c.tags {
 		if value != "" {

@@ -114,6 +114,7 @@ func (s *Sematext) initProcessors() {
 		processors.NewToken(s.Token),
 		processors.NewHost(s.Log),
 		processors.NewHandleCounter(),
+		processors.NewContainerTags(),
 	}
 	s.batchProcessors = []processors.BatchProcessor{
 		// rename processor has to run before metainfo processor to ensure metainfo processor uses final metric names

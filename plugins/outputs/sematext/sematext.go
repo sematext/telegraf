@@ -125,6 +125,7 @@ func (s *Sematext) initProcessors() {
 
 // Write sends metrics to Sematext backend and handles the response
 func (s *Sematext) Write(metrics []telegraf.Metric) error {
+	s.Log.Debugf("Sematext.Write() called with %d metrics in the slice", len(metrics))
 	processedMetrics, err := s.processMetrics(metrics)
 
 	if err != nil {
@@ -133,6 +134,8 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 		s.Log.Errorf("error while preparing to send metrics to Sematext, the batch will be dropped: %v", err)
 		return nil
 	}
+
+	s.Log.Debugf("Preparing to send %d processed metrics", len(processedMetrics))
 
 	if len(processedMetrics) > 0 {
 		body := s.serializer.Write(processedMetrics)
@@ -173,8 +176,11 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 
 // processMetrics returns an error only when the whole batch of metrics should be discarded
 func (s *Sematext) processMetrics(metrics []telegraf.Metric) ([]telegraf.Metric, error) {
+	s.Log.Debugf("Starting processing of slice of %d metrics", len(metrics))
+
 	if metricsAlreadyProcessed(metrics) {
 		// in case some batch was fully processed before, we don't want to process it once again
+		s.Log.Debugf("Skipping processing of already processed slice of %d metrics", len(metrics))
 		return metrics, nil
 	}
 

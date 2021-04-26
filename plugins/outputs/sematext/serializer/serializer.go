@@ -191,7 +191,7 @@ func (s *CompactMetricSerializer) Write(metrics []telegraf.Metric) []byte {
 		idToMetrics[id] = append(idToMetrics[id], m)
 	}
 
-	// sort the keys keep the order fixed
+	// sort the keys to keep the order fixed
 	sortedIds := make([]string, 0, len(idToMetrics))
 	for i := range idToMetrics {
 		sortedIds = append(sortedIds, i)
@@ -238,7 +238,7 @@ func serializeMetrics(metrics []telegraf.Metric) string {
 		return fieldList[i].Key < fieldList[j].Key
 	})
 
-	var countAdded = 0
+	countAdded := 0
 	for _, field := range fieldList {
 		var serializedMetric = serializeMetricField(field.Key, field.Value)
 
@@ -257,5 +257,5 @@ func serializeMetrics(metrics []telegraf.Metric) string {
 }
 
 func buildID(metric telegraf.Metric) string {
-	return fmt.Sprint(metric.Time().UnixNano()) + "-" + metric.Name() + "-" + tags.GetTagsKey(metric.Tags())
+	return strconv.FormatInt(metric.Time().UnixNano(), 10) + "-" + metric.Name() + "-" + tags.GetTagsKey(metric.Tags())
 }

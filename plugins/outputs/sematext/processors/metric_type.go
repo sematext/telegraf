@@ -15,7 +15,7 @@ type MetricType struct {
 
 // Process implements the core of MetricType processor logic
 func (m *MetricType) Process(metric telegraf.Metric) error {
-	if tagValue, set := metric.GetTag(metricTypeTagName); set == true {
+	if tagValue, set := metric.GetTag(metricTypeTagName); set {
 		metric.RemoveTag(metricTypeTagName)
 
 		for _, f := range metric.FieldList() {

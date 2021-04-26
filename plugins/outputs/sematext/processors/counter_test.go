@@ -66,7 +66,3 @@ func TestCalculateDelta(t *testing.T) {
 	assert.Equal(t, float64(10), calculateDelta(float64(10), float64(20)))
 	assert.Equal(t, "def", calculateDelta("abc", "def"))
 }
-
-func TestGetTagsKey(t *testing.T) {
-	assert.Equal(t, "tag1=a,tag2=b,", getTagsKey(map[string]string{"tag1": "a", "tag2": "b"}))
-}

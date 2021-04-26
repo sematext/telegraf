@@ -11,6 +11,16 @@ import (
 	"strings"
 )
 
+type serializationConfig struct {
+	notSerializable map[string]bool
+}
+
+func NewSerializationConfig() *serializationConfig {
+	return &serializationConfig{
+		notSerializable: map[string]bool{tags.SematextProcessedTag: true},
+	}
+}
+
 // MetricSerializer is an interface implemented by different metric serialization implementations.
 type MetricSerializer interface {
 	// Write serializes metrics from metrics parameter and returns the result in []byte
@@ -20,21 +30,21 @@ type MetricSerializer interface {
 // LinePerMetricSerializer provides simple implementation which writes each metric into a new line. The logic is simpler
 // and lighter, but the resulting output will be bigger.
 type LinePerMetricSerializer struct {
-	log             telegraf.Logger
-	notSerializable map[string]bool
+	log    telegraf.Logger
+	config *serializationConfig
 }
 
-// NewLinePerMetricSerializer creates an instance of NewLinePerMetricSerializer
+// NewLinePerMetricSerializer creates an instance of LinePerMetricSerializer
 func NewLinePerMetricSerializer(log telegraf.Logger) *LinePerMetricSerializer {
 	return &LinePerMetricSerializer{
-		log:             log,
-		notSerializable: map[string]bool{tags.SematextProcessedTag: true},
+		log:    log,
+		config: NewSerializationConfig(),
 	}
 }
 
 // NewMetricSerializer creates and instance serializer which should be used to produce Sematext metrics format
 func NewMetricSerializer(log telegraf.Logger) MetricSerializer {
-	return NewLinePerMetricSerializer(log)
+	return NewCompactMetricSerializer(log)
 }
 
 // Write serializes input metrics array according to Sematext variant of influx line protocol. The output is returned
@@ -49,8 +59,8 @@ func (s *LinePerMetricSerializer) Write(metrics []telegraf.Metric) []byte {
 			continue
 		}
 
-		serializedTags := serializeTags(metric.Tags(), s.notSerializable)
-		serializedMetrics := serializeMetrics(metric)
+		serializedTags := serializeTags(metric.Tags(), s.config.notSerializable)
+		serializedMetrics := serializeMetric(metric)
 		serializedTimestamp := strconv.FormatInt(metric.Time().UnixNano(), 10)
 
 		if serializedMetrics == "" {
@@ -100,7 +110,7 @@ func serializeTags(tags map[string]string, notSerializable map[string]bool) stri
 	return serializedTags.String()
 }
 
-func serializeMetrics(metric telegraf.Metric) string {
+func serializeMetric(metric telegraf.Metric) string {
 	var serializedMetrics strings.Builder
 
 	// make the field order sorted
@@ -110,7 +120,7 @@ func serializeMetrics(metric telegraf.Metric) string {
 
 	var countAdded = 0
 	for _, field := range metric.FieldList() {
-		var serializedMetric = serializeMetric(field.Key, field.Value)
+		var serializedMetric = serializeMetricField(field.Key, field.Value)
 
 		if serializedMetric == "" {
 			continue
@@ -126,7 +136,7 @@ func serializeMetrics(metric telegraf.Metric) string {
 	return serializedMetrics.String()
 }
 
-func serializeMetric(key string, value interface{}) string {
+func serializeMetricField(key string, value interface{}) string {
 	var metricValue string
 	switch v := value.(type) {
 	case string:
@@ -156,7 +166,98 @@ func serializeMetric(key string, value interface{}) string {
 // as possible in a single output line, based on tags and timestamp of each metric. When multiple metrics share the
 // same tags and the same timestamp, we can write them in a single line to reduce the total bulk size by not
 // repeating the same tags+timestamp multiple times.
-// TODO to be implemented in the future to make Telegraf requests to Sematext backend smaller
 type CompactMetricSerializer struct {
-	tagsIDToMetrics map[string]telegraf.Metric
+	log    telegraf.Logger
+	config *serializationConfig
+}
+
+// NewCompactMetricSerializer creates an instance of CompactMetricSerializer
+func NewCompactMetricSerializer(log telegraf.Logger) *CompactMetricSerializer {
+	return &CompactMetricSerializer{
+		log:    log,
+		config: NewSerializationConfig(),
+	}
+}
+
+// Write serializes input metrics array according to Sematext variant of influx line protocol. The output is returned
+// as []byte which can be empty if there were no metrics or metrics couldn't be serialized.
+func (s *CompactMetricSerializer) Write(metrics []telegraf.Metric) []byte {
+	var output bytes.Buffer
+	idToMetrics := make(map[string][]telegraf.Metric)
+
+	// first group the metrics that share the same identification
+	for _, m := range metrics {
+		id := buildId(m)
+		idToMetrics[id] = append(idToMetrics[id], m)
+	}
+
+	// sort the keys keep the order fixed
+	sortedIds := make([]string, 0, len(idToMetrics))
+	for i := range idToMetrics {
+		sortedIds = append(sortedIds, i)
+	}
+	sort.Strings(sortedIds)
+
+	// then create 1 metrics line for each of created groups
+	for _, groupId := range sortedIds {
+		metrics := idToMetrics[groupId]
+		serializedTags := serializeTags(metrics[0].Tags(), s.config.notSerializable)
+		serializedMetrics := serializeMetrics(metrics)
+		serializedTimestamp := strconv.FormatInt(metrics[0].Time().UnixNano(), 10)
+
+		if serializedMetrics == "" {
+			continue
+		}
+
+		output.WriteString(nameEscape(metrics[0].Name()))
+		if serializedTags != "" {
+			output.WriteString(",")
+			output.WriteString(serializedTags)
+		}
+		output.WriteString(" ")
+		output.WriteString(serializedMetrics)
+		output.WriteString(" ")
+		output.WriteString(serializedTimestamp)
+		// has to end with a newline
+		output.WriteString("\n")
+	}
+
+	return output.Bytes()
+}
+
+func serializeMetrics(metrics []telegraf.Metric) string {
+	var serializedMetrics strings.Builder
+	fieldList := make([]*telegraf.Field, 0)
+
+	for _, metric := range metrics {
+		for _, field := range metric.FieldList() {
+			fieldList = append(fieldList, field)
+		}
+	}
+
+	// make the field order sorted
+	sort.Slice(fieldList, func(i, j int) bool {
+		return fieldList[i].Key < fieldList[j].Key
+	})
+
+	var countAdded = 0
+	for _, field := range fieldList {
+		var serializedMetric = serializeMetricField(field.Key, field.Value)
+
+		if serializedMetric == "" {
+			continue
+		}
+
+		if countAdded > 0 {
+			serializedMetrics.WriteString(",")
+		}
+		serializedMetrics.WriteString(serializedMetric)
+		countAdded++
+	}
+
+	return serializedMetrics.String()
+}
+
+func buildId(metric telegraf.Metric) string {
+	return fmt.Sprint(metric.Time().UnixNano()) + "-" + metric.Name() + "-" + tags.GetTagsKey(metric.Tags())
 }

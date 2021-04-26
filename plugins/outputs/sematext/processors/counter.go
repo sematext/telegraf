@@ -1,8 +1,8 @@
 package processors
 
 import (
-	"bytes"
 	"github.com/influxdata/telegraf"
+	"github.com/influxdata/telegraf/plugins/outputs/sematext/tags"
 	"math"
 	"sync"
 	"time"
@@ -36,7 +36,7 @@ func (h *HandleCounter) Process(metric telegraf.Metric) error {
 	// if metric is a counter, keep track of its last recording, change the current value to be delta
 	if getSematextMetricType(metric.Type()) == Counter {
 		for _, field := range metric.FieldList() {
-			key := metric.Name() + "." + field.Key + "-" + getTagsKey(metric.Tags())
+			key := metric.Name() + "." + field.Key + "-" + tags.GetTagsKey(metric.Tags())
 			prevValueEntry := h.countersCache[key]
 			currValue := field.Value
 
@@ -133,18 +133,6 @@ func calculateDelta(prevValue interface{}, currValue interface{}) interface{} {
 	default:
 		return 0
 	}
-}
-
-func getTagsKey(tags map[string]string) string {
-	var output bytes.Buffer
-	for k, v := range tags {
-		output.WriteString(k)
-		output.WriteString("=")
-		output.WriteString(v)
-		output.WriteString(",")
-	}
-
-	return output.String()
 }
 
 func (h *HandleCounter) Close() {

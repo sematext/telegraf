@@ -18,7 +18,9 @@ func TestMetricType(t *testing.T) {
 		map[string]interface{}{"disk.used": float64(12.34), "disk.free": int64(55), "disk.size": uint64(777)},
 		now)
 
-	mt.Process(m)
+	err := mt.Process(m)
+
+	assert.Nil(t, err)
 
 	_, set := m.GetTag(metricTypeTagName)
 	assert.Equal(t, false, set)

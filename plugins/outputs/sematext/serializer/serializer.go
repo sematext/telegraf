@@ -11,12 +11,12 @@ import (
 	"strings"
 )
 
-type serializationConfig struct {
+type SerializationConfig struct {
 	notSerializable map[string]bool
 }
 
-func NewSerializationConfig() *serializationConfig {
-	return &serializationConfig{
+func NewSerializationConfig() *SerializationConfig {
+	return &SerializationConfig{
 		notSerializable: map[string]bool{tags.SematextProcessedTag: true},
 	}
 }
@@ -31,7 +31,7 @@ type MetricSerializer interface {
 // and lighter, but the resulting output will be bigger.
 type LinePerMetricSerializer struct {
 	log    telegraf.Logger
-	config *serializationConfig
+	config *SerializationConfig
 }
 
 // NewLinePerMetricSerializer creates an instance of LinePerMetricSerializer
@@ -168,7 +168,7 @@ func serializeMetricField(key string, value interface{}) string {
 // repeating the same tags+timestamp multiple times.
 type CompactMetricSerializer struct {
 	log    telegraf.Logger
-	config *serializationConfig
+	config *SerializationConfig
 }
 
 // NewCompactMetricSerializer creates an instance of CompactMetricSerializer
@@ -187,7 +187,7 @@ func (s *CompactMetricSerializer) Write(metrics []telegraf.Metric) []byte {
 
 	// first group the metrics that share the same identification
 	for _, m := range metrics {
-		id := buildId(m)
+		id := buildID(m)
 		idToMetrics[id] = append(idToMetrics[id], m)
 	}
 
@@ -199,8 +199,8 @@ func (s *CompactMetricSerializer) Write(metrics []telegraf.Metric) []byte {
 	sort.Strings(sortedIds)
 
 	// then create 1 metrics line for each of created groups
-	for _, groupId := range sortedIds {
-		metrics := idToMetrics[groupId]
+	for _, groupID := range sortedIds {
+		metrics := idToMetrics[groupID]
 		serializedTags := serializeTags(metrics[0].Tags(), s.config.notSerializable)
 		serializedMetrics := serializeMetrics(metrics)
 		serializedTimestamp := strconv.FormatInt(metrics[0].Time().UnixNano(), 10)
@@ -230,9 +230,7 @@ func serializeMetrics(metrics []telegraf.Metric) string {
 	fieldList := make([]*telegraf.Field, 0)
 
 	for _, metric := range metrics {
-		for _, field := range metric.FieldList() {
-			fieldList = append(fieldList, field)
-		}
+		fieldList = append(fieldList, metric.FieldList()...)
 	}
 
 	// make the field order sorted
@@ -258,6 +256,6 @@ func serializeMetrics(metrics []telegraf.Metric) string {
 	return serializedMetrics.String()
 }
 
-func buildId(metric telegraf.Metric) string {
+func buildID(metric telegraf.Metric) string {
 	return fmt.Sprint(metric.Time().UnixNano()) + "-" + metric.Name() + "-" + tags.GetTagsKey(metric.Tags())
 }

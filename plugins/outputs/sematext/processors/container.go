@@ -17,6 +17,7 @@ const (
 	k8sClusterEnvName           = "SEMATEXT_K8S_CLUSTER"
 
 	containerImageTag       = "container.name"
+	containerHostnameTag    = "container.hostname"
 	containerIDTag          = "container.id"
 	containerImageNameTag   = "container.image.name"
 	containerImageTagTag    = "container.image.tag"
@@ -43,6 +44,17 @@ func NewContainerTags() MetricProcessor {
 	tags[k8sPodNameTag] = os.Getenv(k8sPodEnvName)
 	tags[k8sNamespaceIDTag] = os.Getenv(k8sNamespaceEnvName)
 	tags[k8sClusterTag] = os.Getenv(k8sClusterEnvName)
+
+	// fill container.hostname only when running in a container env
+	if tags[containerIDTag] != "" {
+		hostname, err := os.Hostname()
+		if err != nil {
+			// use container id value for container.hostname when the hostname can't be read
+			hostname = tags[containerIDTag]
+		}
+		tags[containerHostnameTag] = hostname
+	}
+
 	return &ContainerTags{
 		tags: tags,
 	}

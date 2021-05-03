@@ -2,6 +2,7 @@ package sematext
 
 import (
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/influxdata/telegraf"
@@ -149,8 +150,7 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 	processedMetrics, err := s.processMetrics(metrics)
 
 	if err != nil {
-		// error means the whole batch should be discarded without sending it. To achieve that, we have to return
-		// nil
+		// error means the whole batch should be discarded without sending it. To achieve that, we have to return nil
 		s.Log.Errorf("error while preparing to send metrics to Sematext, the batch will be dropped: %v", err)
 		return nil
 	}
@@ -173,25 +173,37 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 
 		s.Log.Debugf("Sending metrics to %s response status code: %d", s.metricsURL, res.StatusCode)
 
-		success := res.StatusCode >= 200 && res.StatusCode < 300
-		badRequest := res.StatusCode >= 400 && res.StatusCode < 500
-
-		if !success {
-			errorMsg := fmt.Sprintf("received %d status code, message = %q while sending to %s",
-				res.StatusCode, res.Status, s.metricsURL)
-
-			if badRequest {
-				// shouldn't be re-sent as bad request will continue to be a bad request
-				s.Log.Errorf("%s - request will be dropped", errorMsg)
-				return nil
-			}
-
-			// otherwise it is some temporary error from the backend and we should retry
-			return fmt.Errorf(errorMsg)
-		}
+		return s.handleResponse(res)
 	}
 
 	return nil
+}
+
+func (s *Sematext) handleResponse(res *http.Response) error {
+	success, badRequest := checkResponseStatus(res)
+
+	if !success {
+		errorMsg := fmt.Sprintf("received %d status code, message = %q while sending to %s",
+			res.StatusCode, res.Status, s.metricsURL)
+
+		if badRequest {
+			// shouldn't be re-sent as bad request will continue to be a bad request
+			s.Log.Errorf("%s - request will be dropped", errorMsg)
+			return nil
+		}
+
+		// otherwise it is some temporary error from the backend and we should retry
+		return fmt.Errorf(errorMsg)
+	}
+
+	return nil
+}
+
+func checkResponseStatus(res *http.Response) (success bool, badRequest bool) {
+	success = res.StatusCode >= 200 && res.StatusCode < 300
+	badRequest = res.StatusCode >= 400 && res.StatusCode < 500
+
+	return success, badRequest
 }
 
 // processMetrics returns an error only when the whole batch of metrics should be discarded

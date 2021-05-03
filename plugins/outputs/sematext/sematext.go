@@ -171,7 +171,7 @@ func (s *Sematext) Write(metrics []telegraf.Metric) error {
 		}
 		defer res.Body.Close()
 
-		s.Log.Debugf("Sending metrics to %s response status code: %d", s.metricsURL, res.StatusCode)
+		s.Log.Debugf("Sending metrics to %s, response status code: %d", s.metricsURL, res.StatusCode)
 
 		return s.handleResponse(res)
 	}

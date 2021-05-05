@@ -2,6 +2,7 @@ package processors
 
 import (
 	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 	"sync"
@@ -14,6 +15,8 @@ const (
 	sematextHostTag  = "os.host"
 	telegrafHostTag  = "host"
 	hostnameFileName = ".resolved-hostname"
+
+	containerHostHostnameEnvName = "SEMATEXT_CONTAINER_HOST_HOSTNAME"
 )
 
 type Host struct {
@@ -27,14 +30,22 @@ type Host struct {
 // NewHost creates and initializes an instance of Host processor. It also starts periodic host reload goroutine.
 func NewHost(log telegraf.Logger) MetricProcessor {
 	// do the initial load before spawning a goroutine which will periodically reload the hostname
-	hostnameFileName := getHostnameFileName()
-
 	var host string
 	var err error
-	if hostnameFileName != "" {
-		host, err = loadHostname(hostnameFileName)
-		if err != nil {
-			log.Warnf("can't load the hostname from the file %s, error: %v", hostnameFileName, err)
+
+	// in container envs, check if specific env var is present, use it as a hostname if it is
+	containerHostHostname := os.Getenv(containerHostHostnameEnvName)
+	if containerHostHostname != "" {
+		host = containerHostHostname
+	} else {
+		// otherwise try to read from the hostname file
+		hostnameFileName := getHostnameFileName()
+
+		if hostnameFileName != "" {
+			host, err = loadHostname(hostnameFileName)
+			if err != nil {
+				log.Warnf("can't load the hostname from the file %s, error: %v", hostnameFileName, err)
+			}
 		}
 	}
 
@@ -43,8 +54,9 @@ func NewHost(log telegraf.Logger) MetricProcessor {
 		Log:      log,
 	}
 
-	// if the Sematext dir (which might hold the hostname file) doesn't exist, no point in starting the ticker
-	if hostnameFileName != "" {
+	// start only if hostname will be read from the file (env var not present) and if the Sematext dir (which might
+	// hold the hostname file) exists, no point in starting the ticker otherwise
+	if containerHostHostname == "" && hostnameFileName != "" {
 		h.reloadTicker = time.NewTicker(5 * time.Minute)
 		h.stopReload = make(chan bool, 1)
 
@@ -113,7 +125,9 @@ func getHostnameFileName() string {
 func loadHostname(hostnameFileName string) (string, error) {
 	data, err := ioutil.ReadFile(hostnameFileName)
 	if err != nil {
-		return "", err
+		// in case it is not present, fallback to os.Hostname()
+		hostname, _ := os.Hostname()
+		return hostname, err
 	}
 
 	fullStr := string(data)

@@ -44,7 +44,14 @@ func NewHost(log telegraf.Logger) MetricProcessor {
 		if hostnameFileName != "" {
 			host, err = loadHostname(hostnameFileName)
 			if err != nil {
-				log.Warnf("can't load the hostname from the file %s, error: %v", hostnameFileName, err)
+				log.Warnf("can't load the hostname from the file %s, error: %v, falling back to os.Hostname()",
+					hostnameFileName, err)
+			}
+		}
+		if host == "" {
+			host, err = os.Hostname()
+			if err != nil {
+				log.Warnf("os.Hostname() resulted in error: %v")
 			}
 		}
 	}
@@ -71,9 +78,11 @@ func NewHost(log telegraf.Logger) MetricProcessor {
 						log.Warnf("can't load the hostname from the file %s, error: %v", hostnameFileName, err)
 					}
 
-					h.lock.Lock()
-					h.hostname = host
-					h.lock.Unlock()
+					if host != "" {
+						h.lock.Lock()
+						h.hostname = host
+						h.lock.Unlock()
+					}
 				}
 			}
 		}()
@@ -125,9 +134,7 @@ func getHostnameFileName() string {
 func loadHostname(hostnameFileName string) (string, error) {
 	data, err := ioutil.ReadFile(hostnameFileName)
 	if err != nil {
-		// in case it is not present, fallback to os.Hostname()
-		hostname, _ := os.Hostname()
-		return hostname, err
+		return "", err
 	}
 
 	fullStr := string(data)

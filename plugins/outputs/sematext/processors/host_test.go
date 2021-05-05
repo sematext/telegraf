@@ -3,7 +3,6 @@ package processors
 import (
 	"github.com/influxdata/telegraf/metric"
 	"github.com/stretchr/testify/assert"
-	"os"
 	"testing"
 	"time"
 )
@@ -26,10 +25,9 @@ func TestAdjustHostname(t *testing.T) {
 }
 
 func TestLoadHostname(t *testing.T) {
-	realHostname, _ := os.Hostname()
 	assert.Equal(t, "somehost001", onlyHost(loadHostname("./testdata/resolved-hostname")))
-	assert.Equal(t, realHostname, onlyHost(loadHostname("./testdata/doesnt-exist")))
-	assert.Equal(t, realHostname, onlyHost(loadHostname("/baddir")))
+	assert.Equal(t, "", onlyHost(loadHostname("./testdata/doesnt-exist")))
+	assert.Equal(t, "", onlyHost(loadHostname("/baddir")))
 	assert.Equal(t, "somehost001", onlyHost(loadHostname("./testdata/resolved-hostname-multiline")))
 	assert.Equal(t, "somehost001", onlyHost(loadHostname("./testdata/resolved-hostname-multiline2")))
 }

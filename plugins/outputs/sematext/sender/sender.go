@@ -3,6 +3,7 @@ package sender
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"fmt"
 	"net"
@@ -25,9 +26,10 @@ const (
 
 // Config contains sender configuration
 type Config struct {
-	ProxyURL *url.URL
-	Username string
-	Password string
+	ProxyURL  *url.URL
+	Username  string
+	Password  string
+	TLSConfig *tls.Config
 }
 
 // Sender is a simple wrapper around standard HTTP client
@@ -47,6 +49,9 @@ func NewSender(config *Config) *Sender {
 
 	if config.ProxyURL != nil {
 		transport.Proxy = http.ProxyURL(config.ProxyURL)
+	}
+	if config.TLSConfig != nil {
+		transport.TLSClientConfig = config.TLSConfig
 	}
 
 	c := &http.Client{

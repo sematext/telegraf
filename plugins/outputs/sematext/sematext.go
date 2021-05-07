@@ -2,6 +2,7 @@ package sematext
 
 import (
 	"fmt"
+	"github.com/influxdata/telegraf/plugins/common/tls"
 	"net/http"
 	"net/url"
 
@@ -27,6 +28,7 @@ type Sematext struct {
 	Username    string          `toml:"username"`
 	Password    string          `toml:"password"`
 	Log         telegraf.Logger `toml:"-"`
+	tls.ClientConfig
 
 	metricsURL       string
 	sender           *sender.Sender
@@ -109,10 +111,16 @@ func (s *Sematext) Init() error {
 		}
 	}
 
+	tlsConfig, err := s.ClientConfig.TLSConfig()
+	if err != nil {
+		return err
+	}
+
 	s.senderConfig = &sender.Config{
-		ProxyURL: proxyURL,
-		Username: s.Username,
-		Password: s.Password,
+		ProxyURL:  proxyURL,
+		Username:  s.Username,
+		Password:  s.Password,
+		TLSConfig: tlsConfig,
 	}
 	s.sender = sender.NewSender(s.senderConfig)
 	s.metricsURL = s.ReceiverURL + "/write?db=metrics"

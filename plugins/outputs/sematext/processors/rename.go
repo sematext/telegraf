@@ -6,11 +6,13 @@ import (
 
 var (
 	measurementReplaces = map[string]string{
-		"phpfpm":           "php",
-		"mongodb":          "mongo",
-		"mongodb_db_stats": "mongo",
-		"apache":           "apache",
-		"nginx":            "nginx",
+		"phpfpm":              "php",
+		"mongodb":             "mongo",
+		"mongodb_db_stats":    "mongo",
+		"mongodb_col_stats":   "mongo",
+		"mongodb_shard_stats": "mongo",
+		"apache":              "apache",
+		"nginx":               "nginx",
 	}
 	fieldReplaces = map[string]string{
 		// apache
@@ -33,16 +35,16 @@ var (
 		"apache.scboard_sending":      "workers.sending",
 		"apache.scboard_starting":     "workers.starting",
 		"apache.scboard_waiting":      "workers.waiting",
-		"php.accepted_conn":           "fpm.requests.accepted.conns",
-		"php.listen_queue":            "fpm.queue.listen",
-		"php.max_listen_queue":        "fpm.queue.listen.max",
-		"php.listen_queue_len":        "fpm.queue.listen.len",
-		"php.idle_processes":          "fpm.process.idle",
-		"php.active_processes":        "fpm.process.active",
-		"php.total_processes":         "fpm.process.total",
-		"php.max_active_processes":    "fpm.process.active.max",
-		"php.max_children_reached":    "fpm.process.childrenReached.max",
-		"php.slow_requests":           "fpm.requests.slow",
+		"phpfpm.accepted_conn":        "fpm.requests.accepted.conns",
+		"phpfpm.listen_queue":         "fpm.queue.listen",
+		"phpfpm.max_listen_queue":     "fpm.queue.listen.max",
+		"phpfpm.listen_queue_len":     "fpm.queue.listen.len",
+		"phpfpm.idle_processes":       "fpm.process.idle",
+		"phpfpm.active_processes":     "fpm.process.active",
+		"phpfpm.total_processes":      "fpm.process.total",
+		"phpfpm.max_active_processes": "fpm.process.active.max",
+		"phpfpm.max_children_reached": "fpm.process.childrenReached.max",
+		"phpfpm.slow_requests":        "fpm.requests.slow",
 		// nginx
 		"nginx.accepts":  "requests.connections.accepted",
 		"nginx.handled":  "requests.connections.handled",
@@ -52,37 +54,54 @@ var (
 		"nginx.waiting":  "requests.connections.waiting",
 		"nginx.requests": "request.count",
 		// mongodb
-		"mongo.flushes":                   "flushes",
-		"mongo.flushes_total_time_ns":     "flushes.time",
-		"mongo.document_inserted":         "documents.inserted",
-		"mongo.document_updated":          "documents.updated",
-		"mongo.document_deleted":          "documents.deleted",
-		"mongo.document_returned":         "documents.returned",
-		"mongo.resident_megabytes":        "memory.resident",
-		"mongo.vsize_megabytes":           "memory.virtual",
-		"mongo.mapped_megabytes":          "memory.mapped",
-		"mongo.inserts":                   "ops.insert",
-		"mongo.queries":                   "ops.query",
-		"mongo.updates":                   "ops.update",
-		"mongo.getmores":                  "ops.getmore",
-		"mongo.commands":                  "ops.command",
-		"mongo.repl_inserts":              "replica.ops.insert",
-		"mongo.repl_queries":              "replica.ops.query",
-		"mongo.repl_updates":              "replica.ops.update",
-		"mongo.repl_deletes":              "replica.ops.delete",
-		"mongo.repl_getmores":             "replica.ops.getmore",
-		"mongo.repl_commands":             "replica.ops.command",
-		"mongo.count_command_failed":      "commands.failed",
-		"mongo.count_command_total":       "commands.total",
-		"mongo.data_size":                 "database.data.size",
-		"mongo.storage_size":              "database.storage.size",
-		"mongo.index_size":                "database.index.size",
-		"mongo.collections":               "database.collections",
-		"mongo.objects":                   "database.objects",
+		"mongodb.flushes":                 "flushes",
+		"mongodb.flushes_total_time_ns":   "flushes.time",
+		"mongodb.document_inserted":       "documents.inserted",
+		"mongodb.document_updated":        "documents.updated",
+		"mongodb.document_deleted":        "documents.deleted",
+		"mongodb.document_returned":       "documents.returned",
+		"mongodb.resident_megabytes":      "memory.resident",
+		"mongodb.vsize_megabytes":         "memory.virtual",
+		"mongodb.mapped_megabytes":        "memory.mapped",
+		"mongodb.inserts":                 "ops.insert",
+		"mongodb.queries":                 "ops.query",
+		"mongodb.updates":                 "ops.update",
+		"mongodb.getmores":                "ops.getmore",
+		"mongodb.commands":                "ops.command",
+		"mongodb.repl_inserts":            "replica.ops.insert",
+		"mongodb.repl_queries":            "replica.ops.query",
+		"mongodb.repl_updates":            "replica.ops.update",
+		"mongodb.repl_deletes":            "replica.ops.delete",
+		"mongodb.repl_getmores":           "replica.ops.getmore",
+		"mongodb.repl_commands":           "replica.ops.command",
+		"mongodb.count_command_failed":    "commands.failed",
+		"mongodb.count_command_total":     "commands.total",
+		"mongodb_db_stats.data_size":      "database.data.size",
+		"mongodb_db_stats.storage_size":   "database.storage.size",
+		"mongodb_db_stats.index_size":     "database.index.size",
+		"mongodb_db_stats.collections":    "database.collections",
+		"mongodb_db_stats.objects":        "database.objects",
+		"mongodb_db_stats.avg_obj_size":   "database.avg_obj_size",
+		"mongodb_db_stats.indexes":        "database.indexes",
+		"mongodb_db_stats.num_extents":    "database.num_extents",
+		"mongodb_db_stats.ok":             "database.ok",
 		"mongo.connections_current":       "network.connections",
 		"mongo.connections_total_created": "network.connections.total",
 		"mongo.net_in_bytes":              "network.transfer.rx.rate",
 		"mongo.net_out_bytes":             "network.transfer.tx.rate",
+		// mongodb_col_stats -> these appear like they map to the same thing, but "from" side is actually
+		// "name.metricName" and "to" side is just the new "metricName"
+		"mongodb_col_stats.avg_obj_size":     "mongodb_col_stats.avg_obj_size",
+		"mongodb_col_stats.count":            "mongodb_col_stats.count",
+		"mongodb_col_stats.ok":               "mongodb_col_stats.ok",
+		"mongodb_col_stats.size":             "mongodb_col_stats.size",
+		"mongodb_col_stats.storage_size":     "mongodb_col_stats.storage_size",
+		"mongodb_col_stats.total_index_size": "mongodb_col_stats.total_index_size",
+		// mongodb_shard_stats -> same logic as for mongodb_col_stats
+		"mongodb_shard_stats.in_use":     "mongodb_shard_stats.in_use",
+		"mongodb_shard_stats.available":  "mongodb_shard_stats.available",
+		"mongodb_shard_stats.created":    "mongodb_shard_stats.created",
+		"mongodb_shard_stats.refreshing": "mongodb_shard_stats.refreshing",
 	}
 )
 
@@ -97,14 +116,15 @@ func NewRename() BatchProcessor { return &Rename{} }
 // and replaces the metric name with the new name.
 func (r *Rename) Process(points []telegraf.Metric) ([]telegraf.Metric, error) {
 	for _, point := range points {
-		replace, ok := measurementReplaces[point.Name()]
+		originalName := point.Name()
+		replace, ok := measurementReplaces[originalName]
 		if !ok {
 			continue
 		}
 		point.SetName(replace)
 		removedFields := make([]string, 0)
 		for _, field := range point.FieldList() {
-			key := point.Name() + "." + field.Key
+			key := originalName + "." + field.Key
 			replace, ok := fieldReplaces[key]
 			if !ok {
 				continue

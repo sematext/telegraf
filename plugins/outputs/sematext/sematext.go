@@ -215,6 +215,7 @@ func checkResponseStatus(res *http.Response) (success bool, badRequest bool) {
 }
 
 // processMetrics returns an error only when the whole batch of metrics should be discarded
+// batchProcessors run first, metricProcessors follow later
 func (s *Sematext) processMetrics(metrics []telegraf.Metric) ([]telegraf.Metric, error) {
 	s.Log.Debugf("Starting processing of slice of %d metrics", len(metrics))
 

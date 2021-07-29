@@ -43,7 +43,7 @@ const sampleConfig = `
 
   ## URL of your Sematext metrics receiver. US-region metrics receiver is used
   ## in this example (it is also the default when receiver_url value is empty),
-  ## but address of e.g. on-premises Sematext metrics receiver can be used
+  ## but address of e.g. Sematext EU-region metrics receiver can be used
   ## instead.
   receiver_url = "https://spm-receiver.sematext.com"
 

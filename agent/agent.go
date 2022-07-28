@@ -775,8 +775,12 @@ func (a *Agent) runOutputs(
 		for i, output := range unit.outputs {
 			if i == len(a.Config.Outputs)-1 {
 				output.AddMetric(metric)
+				log.Println(metric.Name())
+				log.Println(metric.FieldList())
 			} else {
 				output.AddMetric(metric.Copy())
+				log.Println(metric.Name())
+				log.Println(metric.FieldList())
 			}
 		}
 	}

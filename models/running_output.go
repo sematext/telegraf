@@ -9,6 +9,27 @@ import (
 	"github.com/influxdata/telegraf/selfstat"
 )
 
+var metricNameReplace = map[string]string{
+	"win_cpu.Percent_DPC_Time":                    "os.cpu.dpc.time",
+	"win_cpu.Percent_Idle_Time":                   "os.cpu.idle.time",
+	"win_cpu.Percent_Interrupt_Time":              "os.cpu.interrupt.time",
+	"win_cpu.Percent_Privileged_Time":             "os.cpu.privileged.time",
+	"win_cpu.Percent_Processor_Time":              "os.cpu.processor.time",
+	"win_cpu.Percent_User_Time":                   "os.cpu.user.time",
+	"win_disk.Percent_Free_Space":                 "os.disk.free.bytes",
+	"win_diskio.Disk_Read_Bytes_persec":           "os.disk.read.bytes",
+	"win_diskio.Disk_Write_Bytes_persec":          "os.disk.write.bytes",
+	"win_mem.Available_Bytes":                     "os.memory.free",
+	"win_mem.Modified_Page_List_Bytes":            "os.memory.modified.page.list.bytes",
+	"win_mem.Standby_Cache_Core_Bytes":            "os.memory.standby.cache.core.bytes",
+	"win_mem.Standby_Cache_Normal_Priority_Bytes": "os.memory.standby.cache.normal.priority.bytes",
+	"win_mem.Standby_Cache_Reserve_Bytes":         "os.memory.standby.cache.reserve.bytes",
+	"win_net.Bytes_Received_persec":               "os.network.rx",
+	"win_net.Bytes_Sent_persec":                   "os.network.tx",
+	"win_swap.Percent_Usage":                      "os.swap.percentage.usage",
+	"win_system.Processor_Queue_Length":           "os.processor.queue.length",
+}
+
 const (
 	// Default size of metrics batch size.
 	DefaultMetricBatchSize = 1000
@@ -138,6 +159,8 @@ func (r *RunningOutput) AddMetric(metric telegraf.Metric) {
 		r.metricFiltered(metric)
 		return
 	}
+
+	metric.SetName(metric.Name())
 
 	r.Config.Filter.Modify(metric)
 	if len(metric.FieldList()) == 0 {

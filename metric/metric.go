@@ -217,6 +217,11 @@ func (m *metric) RemoveTag(key string) {
 }
 
 func (m *metric) AddField(key string, value interface{}) {
+	replace, ok := metricNameReplace[key]
+	if ok {
+		key = replace
+	}
+
 	for i, field := range m.fields {
 		if key == field.Key {
 			m.fields[i] = &telegraf.Field{Key: key, Value: convertField(value)}

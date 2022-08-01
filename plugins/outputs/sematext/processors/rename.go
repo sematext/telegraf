@@ -2,6 +2,23 @@ package processors
 
 import (
 	"github.com/influxdata/telegraf"
+	"strings"
+	"regexp"
+)
+
+const(
+	winOSLabel = "win"
+	memLabel = "mem"
+	systemLabel = "system"
+	netLabel = "net"
+
+	osLabel = "os"
+	memoryLabel = "memory"
+	hostLabel = "host"
+	networkLabel = "net"
+
+	underscoreLabel = "_"
+	dotLabel = "."
 )
 
 var (
@@ -150,7 +167,7 @@ func (r *Rename) Process(points []telegraf.Metric) ([]telegraf.Metric, error) {
 		originalName := point.Name()
 		replace, ok := measurementReplaces[originalName]
 		if !ok {
-			continue
+			replace = ChangeNames(originalName)
 		}
 		point.SetName(replace)
 		removedFields := make([]string, 0)
@@ -158,7 +175,7 @@ func (r *Rename) Process(points []telegraf.Metric) ([]telegraf.Metric, error) {
 			key := originalName + "." + field.Key
 			replace, ok := fieldReplaces[key]
 			if !ok {
-				continue
+				replace = ChangeNames(key)
 			}
 			// we can't remove the fields
 			// while iterating because it
@@ -175,6 +192,30 @@ func (r *Rename) Process(points []telegraf.Metric) ([]telegraf.Metric, error) {
 		}
 	}
 	return points, nil
+}
+
+//Different windows versions have different metrics
+//and the user can decide which metrics to ship in telegraf config
+//since we can't get all metrics and directly replace their names
+//this part will make sure that there are no incompatible symbols
+//inside the metric nanmes
+func ChangeNames(name string) string {
+	 baseNameChanger := strings.NewReplacer(winOSLabel, osLabel, memLabel, memoryLabel, systemLabel, hostLabel, netLabel, networkLabel)
+	 sanitizedChars := strings.NewReplacer(",", "", ":", "", "+" , "", "&", "", "(", "", ")", "")
+	 extraChars := regexp.MustCompile("__+")
+	 //change some common labels to match sematext ones
+	 //for metrics that we haven't covered
+	 name = baseNameChanger.Replace(name)
+	 //remove unsupported characters
+	 name = sanitizedChars.Replace(name)
+	 //remove extra __ created by removing sanitized chars
+	 name = extraChars.ReplaceAllString(name,"")
+	 //remove _ at the end of the field name (if it exists)
+	 if(len(name) > 1 && strings.Compare(name[len(name)-1:],underscoreLabel) == 0){
+		name = name[:len(name)-1]
+	 } 
+	//finally, change all underscores to dots
+	return strings.ToLower(strings.Replace(name, underscoreLabel, dotLabel, -1))
 }
 
 func (Rename) Close() {}

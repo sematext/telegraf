@@ -2,6 +2,23 @@ package processors
 
 import (
 	"github.com/influxdata/telegraf"
+	"strings"
+	"regexp"
+)
+
+const(
+	winOSLabel = "win"
+	memLabel = "mem"
+	systemLabel = "system"
+	netLabel = "net"
+
+	osLabel = "os"
+	memoryLabel = "memory"
+	hostLabel = "host"
+	networkLabel = "net"
+
+	underscoreLabel = "_"
+	dotLabel = "."
 )
 
 var (
@@ -13,6 +30,14 @@ var (
 		"mongodb_shard_stats":                         "mongo",
 		"apache":                                      "apache",
 		"nginx":                                       "nginx",
+		"win_cpu":                   				   "os.cpu",
+		"win_disk":                                    "os.disk",
+		"win_diskio":                                  "os.diskio",
+		"win_mem":                                     "os.memory",
+		"win_net":                                     "os.network",
+		"win_swap":                                    "os.swap",
+		"win_system":                                  "os.host",
+		"win_eventlog":                                "os.eventlog",
 	}
 
 	fieldReplaces = map[string]string{
@@ -103,6 +128,28 @@ var (
 		"mongodb_shard_stats.available":  "mongodb_shard_stats.available",
 		"mongodb_shard_stats.created":    "mongodb_shard_stats.created",
 		"mongodb_shard_stats.refreshing": "mongodb_shard_stats.refreshing",
+
+		"win_cpu.Percent_DPC_Time":                    "percentage.dpc.time",
+		"win_cpu.Percent_Idle_Time":                   "percentage.idle.time",
+		"win_cpu.Percent_Interrupt_Time":              "percentage.interrupt.time",
+		"win_cpu.Percent_Privileged_Time":             "percentage.privileged.time",
+		"win_cpu.Percent_Processor_Time":              "percentage.processor.time",
+		"win_cpu.Percent_User_Time":                   "percentage.user.time",
+		"win_disk.Percent_Free_Space":                 "percentage.free.bytes",
+		"win_diskio.Disk_Read_Bytes_persec":           "read.bytes",
+		"win_diskio.Disk_Write_Bytes_persec":          "write.bytes",
+		"win_mem.Available_Bytes":                     "free",
+		"win_mem.Modified_Page_List_Bytes":            "modified.page.list.bytes",
+		"win_mem.Standby_Cache_Core_Bytes":            "standby.cache.core.bytes",
+		"win_mem.Standby_Cache_Normal_Priority_Bytes": "standby.cache.normal.priority.bytes",
+		"win_mem.Standby_Cache_Reserve_Bytes":         "standby.cache.reserve.bytes",
+		"win_net.Bytes_Received_persec":               "rx",
+		"win_net.Bytes_Sent_persec":                   "tx",
+		"win_swap.Percent_Usage":                      "percentage.usage",
+		"win_system.Processor_Queue_Length":           "processor.queue.length",
+		"win_eventlog.Version":                        "version",
+		"win_eventlog.EventRecordID":                  "eventrecordid",
+		"win_eventlog.Task":                           "task",
 	}
 )
 
@@ -120,7 +167,7 @@ func (r *Rename) Process(points []telegraf.Metric) ([]telegraf.Metric, error) {
 		originalName := point.Name()
 		replace, ok := measurementReplaces[originalName]
 		if !ok {
-			continue
+			replace = ChangeNames(originalName)
 		}
 		point.SetName(replace)
 		removedFields := make([]string, 0)
@@ -128,7 +175,7 @@ func (r *Rename) Process(points []telegraf.Metric) ([]telegraf.Metric, error) {
 			key := originalName + "." + field.Key
 			replace, ok := fieldReplaces[key]
 			if !ok {
-				continue
+				replace = ChangeNames(key)
 			}
 			// we can't remove the fields
 			// while iterating because it
@@ -145,6 +192,30 @@ func (r *Rename) Process(points []telegraf.Metric) ([]telegraf.Metric, error) {
 		}
 	}
 	return points, nil
+}
+
+//Different windows versions have different metrics
+//and the user can decide which metrics to ship in telegraf config
+//since we can't get all metrics and directly replace their names
+//this part will make sure that there are no incompatible symbols
+//inside the metric nanmes
+func ChangeNames(name string) string {
+	 baseNameChanger := strings.NewReplacer(winOSLabel, osLabel, memLabel, memoryLabel, systemLabel, hostLabel, netLabel, networkLabel)
+	 sanitizedChars := strings.NewReplacer(",", "", ":", "", "+" , "", "&", "", "(", "", ")", "")
+	 extraChars := regexp.MustCompile("__+")
+	 //change some common labels to match sematext ones
+	 //for metrics that we haven't covered
+	 name = baseNameChanger.Replace(name)
+	 //remove unsupported characters
+	 name = sanitizedChars.Replace(name)
+	 //remove extra __ created by removing sanitized chars
+	 name = extraChars.ReplaceAllString(name,"")
+	 //remove _ at the end of the field name (if it exists)
+	 if(len(name) > 1 && strings.Compare(name[len(name)-1:],underscoreLabel) == 0){
+		name = name[:len(name)-1]
+	 } 
+	//finally, change all underscores to dots
+	return strings.ToLower(strings.Replace(name, underscoreLabel, dotLabel, -1))
 }
 
 func (Rename) Close() {}

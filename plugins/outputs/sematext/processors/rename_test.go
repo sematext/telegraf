@@ -24,7 +24,7 @@ func TestRename(t *testing.T) {
 	assert.Equal(t, "apache", results[0].Name())
 	assert.Equal(t, "php", results[1].Name())
 	assert.Equal(t, "workers.dns", results[2].FieldList()[0].Key)
-	assert.Equal(t, "slow_requests", results[3].FieldList()[0].Key)
+	assert.Equal(t, "etcd.slow.requests", results[3].FieldList()[0].Key)
 	assert.Equal(t, "fpm.requests.slow", results[4].FieldList()[0].Key)
 	assert.Equal(t, "mongo", results[5].Name())
 	assert.Equal(t, "mongodb_col_stats.ok", results[5].FieldList()[0].Key)

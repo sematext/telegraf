@@ -1,18 +1,19 @@
 package processors
 
 import (
-	"github.com/influxdata/telegraf/metric"
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/influxdata/telegraf/metric"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMetricType(t *testing.T) {
 	mt := NewMetricType()
 
 	now := time.Now()
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{telegrafHostTag: "somehost", "os.disk": "sda1", metricTypeTagName: "counter"},
 		map[string]interface{}{"disk.used": float64(12.34), "disk.free": int64(55), "disk.size": uint64(777)},

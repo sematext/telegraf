@@ -11,9 +11,8 @@ import (
 
 func TestBuildHeartbeatMetric(t *testing.T) {
 	now := time.Now()
-	metric, err := buildHeartbeatMetric(now)
+	metric := buildHeartbeatMetric(now)
 
-	assert.Nil(t, err)
 	assert.Equal(t, "heartbeat", metric.Name())
 	assert.Equal(t, 1, len(metric.Fields()))
 	val, set := metric.GetField("alive")
@@ -43,10 +42,8 @@ func TestAddHeartbeat(t *testing.T) {
 
 	assert.Equal(t, false, h.injectedMinutes[currentMinute])
 	metrics := make([]telegraf.Metric, 0, 1)
-	var err error
-	metrics, err = h.addHeartbeat(metrics, currentMinute, now.Unix())
+	metrics = h.addHeartbeat(metrics, currentMinute, now.Unix())
 
-	assert.Nil(t, err)
 	assert.Equal(t, true, h.injectedMinutes[currentMinute])
 	assert.Equal(t, 1, len(metrics))
 	assert.Equal(t, now.Unix(), metrics[0].Time().Unix())
@@ -57,26 +54,21 @@ func TestProcess(t *testing.T) {
 	h := bp.(*Heartbeat)
 	metrics := make([]telegraf.Metric, 0, 2)
 
-	var err error
-	metrics, err = h.Process(metrics)
+	metrics = h.Process(metrics)
 
 	// no metrics, so no heartbeat metric should be injected
-	assert.Nil(t, err)
 	assert.Equal(t, 0, len(metrics))
 
 	now := time.Now()
 	currentMinute := getEpochMinute(now)
-	cpuMetric, err := metric.New("os",
+	cpuMetric := metric.New("os",
 		make(map[string]string),
 		map[string]interface{}{"cpu.user": 99.9},
 		now, telegraf.Gauge)
 
-	assert.Nil(t, err)
-
 	metrics = append(metrics, cpuMetric)
 
-	metrics, err = h.Process(metrics)
-	assert.Nil(t, err)
+	metrics = h.Process(metrics)
 	assert.Equal(t, true, h.injectedMinutes[currentMinute])
 	// cpu.user and a heartbeat metric:
 	assert.Equal(t, 2, len(metrics))
@@ -87,17 +79,14 @@ func TestFindMetricMinutes(t *testing.T) {
 
 	now := time.Now()
 	currentMinute := getEpochMinute(now)
-	cpuMetric, err := metric.New("os",
+	cpuMetric := metric.New("os",
 		make(map[string]string),
 		map[string]interface{}{"cpu.user": 99.9},
 		now, telegraf.Gauge)
 
-	assert.Nil(t, err)
-
 	metrics = append(metrics, cpuMetric)
 
 	minMap := findMetricMinutes(metrics)
-	assert.Nil(t, err)
 	assert.Equal(t, now.Unix(), minMap[currentMinute])
 }
 

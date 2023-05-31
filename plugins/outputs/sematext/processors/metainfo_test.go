@@ -1,16 +1,17 @@
 package processors
 
 import (
+	"testing"
+	"time"
+
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/metric"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestProcessMetric(t *testing.T) {
 	now := time.Now()
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{telegrafHostTag: "somehost", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34), "disk.free": int64(55), "disk.size": uint64(777)},
@@ -34,7 +35,7 @@ func TestProcessMetric(t *testing.T) {
 
 func TestBuildMetainfo(t *testing.T) {
 	now := time.Now()
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{telegrafHostTag: "somehost", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34), "disk.free": int64(55), "disk.size": uint64(777)},
@@ -51,7 +52,7 @@ func TestBuildMetainfo(t *testing.T) {
 	assert.Equal(t, "os.disk.used", mInfo.label)
 	assert.Equal(t, "", mInfo.description)
 
-	m, _ = metric.New(
+	m = metric.New(
 		"os",
 		map[string]string{telegrafHostTag: "somehost", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34), "disk.free": int64(55), "disk.size": uint64(777)},
@@ -60,7 +61,7 @@ func TestBuildMetainfo(t *testing.T) {
 
 	assert.Equal(t, Counter, mInfo.semType)
 
-	m, _ = metric.New(
+	m = metric.New(
 		"os",
 		map[string]string{telegrafHostTag: "somehost", "os.disk": "sda1"},
 		map[string]interface{}{"disk.state": "active"},

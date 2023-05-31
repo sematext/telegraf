@@ -2,9 +2,10 @@ package serializer
 
 import (
 	"fmt"
-	"github.com/influxdata/telegraf/testutil"
 	"testing"
 	"time"
+
+	"github.com/influxdata/telegraf/testutil"
 
 	"github.com/stretchr/testify/assert"
 
@@ -17,7 +18,7 @@ func TestLinePerMetricSerializerWrite(t *testing.T) {
 
 	now := time.Now()
 
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname"},
 		map[string]interface{}{"disk.size": uint64(777)},
@@ -29,7 +30,7 @@ func TestLinePerMetricSerializerWrite(t *testing.T) {
 		fmt.Sprintf("os,os.host=hostname disk.size=777i %d\n", now.UnixNano()),
 		string(serializer.Write(metrics)))
 
-	m, _ = metric.New(
+	m = metric.New(
 		"system",
 		map[string]string{"os.host": "hostname", "token": "token"},
 		map[string]interface{}{"uptime_format": "18 days, 22:37"},
@@ -48,7 +49,7 @@ func TestLinePerMetricSerializerWriteNoTags(t *testing.T) {
 
 	now := time.Now()
 
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{},
 		map[string]interface{}{"disk.size": uint64(777)},
@@ -66,7 +67,7 @@ func TestLinePerMetricSerializerWriteNoMetrics(t *testing.T) {
 
 	now := time.Now()
 
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname"},
 		map[string]interface{}{},
@@ -82,7 +83,7 @@ func TestLinePerMetricSerializerWriteMultipleTagsAndMetrics(t *testing.T) {
 
 	now := time.Now()
 
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34), "disk.free": int64(55), "disk.size": uint64(777)},
@@ -100,7 +101,7 @@ func TestCompactMetricSerializerWrite(t *testing.T) {
 
 	now := time.Now()
 
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname"},
 		map[string]interface{}{"disk.size": uint64(777)},
@@ -112,7 +113,7 @@ func TestCompactMetricSerializerWrite(t *testing.T) {
 		fmt.Sprintf("os,os.host=hostname disk.size=777i %d\n", now.UnixNano()),
 		string(serializer.Write(metrics)))
 
-	m, _ = metric.New(
+	m = metric.New(
 		"system",
 		map[string]string{"os.host": "hostname", "token": "token"},
 		map[string]interface{}{"uptime_format": "18 days, 22:37"},
@@ -131,7 +132,7 @@ func TestCompactMetricSerializerWriteNoTags(t *testing.T) {
 
 	now := time.Now()
 
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{},
 		map[string]interface{}{"disk.size": uint64(777)},
@@ -149,7 +150,7 @@ func TestCompactMetricSerializerWriteNoMetrics(t *testing.T) {
 
 	now := time.Now()
 
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname"},
 		map[string]interface{}{},
@@ -165,7 +166,7 @@ func TestCompactMetricSerializerWriteMultipleTagsAndMetrics(t *testing.T) {
 
 	now := time.Now()
 
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34), "disk.free": int64(55), "disk.size": uint64(777)},
@@ -183,19 +184,19 @@ func TestCompactMetricSerializerWriteMultipleMetricsSingleLine(t *testing.T) {
 
 	now := time.Now()
 
-	m1, _ := metric.New(
+	m1 := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34)},
 		now)
 
-	m2, _ := metric.New(
+	m2 := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.free": int64(55)},
 		now)
 
-	m3, _ := metric.New(
+	m3 := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.size": uint64(777)},
@@ -213,19 +214,19 @@ func TestCompactMetricSerializerWriteMultipleMetricsMultipleLines(t *testing.T) 
 
 	now := time.Now()
 
-	m1, _ := metric.New(
+	m1 := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34)},
 		now)
 
-	m2, _ := metric.New(
+	m2 := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.free": int64(55)},
 		now)
 
-	m3, _ := metric.New(
+	m3 := metric.New(
 		"somethingelse",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.size": uint64(777)},
@@ -244,7 +245,7 @@ func TestCompactMetricSerializerWriteMultipleMetricsDifferentTimestamp(t *testin
 
 	now := time.Now()
 
-	m1, _ := metric.New(
+	m1 := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34)},
@@ -252,7 +253,7 @@ func TestCompactMetricSerializerWriteMultipleMetricsDifferentTimestamp(t *testin
 
 	now2 := time.Now().AddDate(0, 0, 1)
 
-	m2, _ := metric.New(
+	m2 := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.free": int64(55)},
@@ -260,7 +261,7 @@ func TestCompactMetricSerializerWriteMultipleMetricsDifferentTimestamp(t *testin
 
 	now3 := time.Now().AddDate(0, 0, 2)
 
-	m3, _ := metric.New(
+	m3 := metric.New(
 		"os",
 		map[string]string{"os.host": "hostname", "os.disk": "sda1"},
 		map[string]interface{}{"disk.size": uint64(777)},

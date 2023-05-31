@@ -1,13 +1,14 @@
 package sematext
 
 import (
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/influxdata/telegraf"
 	"github.com/influxdata/telegraf/metric"
 	"github.com/influxdata/telegraf/testutil"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"testing"
-	"time"
 )
 
 func TestCheckResponseStatus(t *testing.T) {
@@ -55,7 +56,7 @@ func TestHandleResponse(t *testing.T) {
 
 func TestMetricAlreadyProcessed(t *testing.T) {
 	now := time.Now()
-	m, _ := metric.New(
+	m := metric.New(
 		"os",
 		map[string]string{"os.host": "somehost", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34)},
@@ -73,13 +74,13 @@ func TestMetricAlreadyProcessed(t *testing.T) {
 
 func TestMetricsAlreadyProcessed(t *testing.T) {
 	now := time.Now()
-	m1, _ := metric.New(
+	m1 := metric.New(
 		"os",
 		map[string]string{"os.host": "somehost", "os.disk": "sda1"},
 		map[string]interface{}{"disk.used": float64(12.34)},
 		now)
 
-	m2, _ := metric.New(
+	m2 := metric.New(
 		"os",
 		map[string]string{"os.host": "somehost", "os.disk": "sda2"},
 		map[string]interface{}{"disk.used": float64(23.45)},

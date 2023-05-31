@@ -1,9 +1,10 @@
 package processors
 
 import (
-	"github.com/influxdata/telegraf"
 	"regexp"
 	"strings"
+
+	"github.com/influxdata/telegraf"
 )
 
 const (
@@ -80,41 +81,41 @@ var (
 		"nginx.waiting":  "requests.connections.waiting",
 		"nginx.requests": "request.count",
 		// mongodb
-		"mongodb.flushes":                 "flushes",
-		"mongodb.flushes_total_time_ns":   "flushes.time",
-		"mongodb.document_inserted":       "documents.inserted",
-		"mongodb.document_updated":        "documents.updated",
-		"mongodb.document_deleted":        "documents.deleted",
-		"mongodb.document_returned":       "documents.returned",
-		"mongodb.resident_megabytes":      "memory.resident",
-		"mongodb.vsize_megabytes":         "memory.virtual",
-		"mongodb.mapped_megabytes":        "memory.mapped",
-		"mongodb.inserts":                 "ops.insert",
-		"mongodb.queries":                 "ops.query",
-		"mongodb.updates":                 "ops.update",
-		"mongodb.getmores":                "ops.getmore",
-		"mongodb.commands":                "ops.command",
-		"mongodb.repl_inserts":            "replica.ops.insert",
-		"mongodb.repl_queries":            "replica.ops.query",
-		"mongodb.repl_updates":            "replica.ops.update",
-		"mongodb.repl_deletes":            "replica.ops.delete",
-		"mongodb.repl_getmores":           "replica.ops.getmore",
-		"mongodb.repl_commands":           "replica.ops.command",
-		"mongodb.count_command_failed":    "commands.failed",
-		"mongodb.count_command_total":     "commands.total",
-		"mongodb_db_stats.data_size":      "database.data.size",
-		"mongodb_db_stats.storage_size":   "database.storage.size",
-		"mongodb_db_stats.index_size":     "database.index.size",
-		"mongodb_db_stats.collections":    "database.collections",
-		"mongodb_db_stats.objects":        "database.objects",
-		"mongodb_db_stats.avg_obj_size":   "database.avg_obj_size",
-		"mongodb_db_stats.indexes":        "database.indexes",
-		"mongodb_db_stats.num_extents":    "database.num_extents",
-		"mongodb_db_stats.ok":             "database.ok",
-		"mongo.connections_current":       "network.connections",
-		"mongo.connections_total_created": "network.connections.total",
-		"mongo.net_in_bytes":              "network.transfer.rx.rate",
-		"mongo.net_out_bytes":             "network.transfer.tx.rate",
+		"mongodb.flushes":                   "flushes",
+		"mongodb.flushes_total_time_ns":     "flushes.time",
+		"mongodb.document_inserted":         "documents.inserted",
+		"mongodb.document_updated":          "documents.updated",
+		"mongodb.document_deleted":          "documents.deleted",
+		"mongodb.document_returned":         "documents.returned",
+		"mongodb.resident_megabytes":        "memory.resident",
+		"mongodb.vsize_megabytes":           "memory.virtual",
+		"mongodb.mapped_megabytes":          "memory.mapped",
+		"mongodb.inserts":                   "ops.insert",
+		"mongodb.queries":                   "ops.query",
+		"mongodb.updates":                   "ops.update",
+		"mongodb.getmores":                  "ops.getmore",
+		"mongodb.commands":                  "ops.command",
+		"mongodb.repl_inserts":              "replica.ops.insert",
+		"mongodb.repl_queries":              "replica.ops.query",
+		"mongodb.repl_updates":              "replica.ops.update",
+		"mongodb.repl_deletes":              "replica.ops.delete",
+		"mongodb.repl_getmores":             "replica.ops.getmore",
+		"mongodb.repl_commands":             "replica.ops.command",
+		"mongodb.count_command_failed":      "commands.failed",
+		"mongodb.count_command_total":       "commands.total",
+		"mongodb_db_stats.data_size":        "database.data.size",
+		"mongodb_db_stats.storage_size":     "database.storage.size",
+		"mongodb_db_stats.index_size":       "database.index.size",
+		"mongodb_db_stats.collections":      "database.collections",
+		"mongodb_db_stats.objects":          "database.objects",
+		"mongodb_db_stats.avg_obj_size":     "database.avg_obj_size",
+		"mongodb_db_stats.indexes":          "database.indexes",
+		"mongodb_db_stats.num_extents":      "database.num_extents",
+		"mongodb_db_stats.ok":               "database.ok",
+		"mongodb.connections_current":       "network.connections",
+		"mongodb.connections_total_created": "network.connections.total",
+		"mongodb.net_in_bytes":              "network.transfer.rx.rate",
+		"mongodb.net_out_bytes":             "network.transfer.tx.rate",
 		// mongodb_col_stats -> these appear like they map to the same thing, but "from" side is actually
 		// "name.metricName" and "to" side is just the new "metricName"
 		"mongodb_col_stats.avg_obj_size":     "mongodb_col_stats.avg_obj_size",
@@ -128,6 +129,49 @@ var (
 		"mongodb_shard_stats.available":  "mongodb_shard_stats.available",
 		"mongodb_shard_stats.created":    "mongodb_shard_stats.created",
 		"mongodb_shard_stats.refreshing": "mongodb_shard_stats.refreshing",
+
+		"mongodb.tcmalloc_heap_size":                     "tcmalloc_heap_size",
+		"mongodb.tcmalloc_current_allocated_bytes":       "tcmalloc_current_allocated_bytes",
+		"mongodb.tcmalloc_total_free_bytes":              "tcmalloc_total_free_bytes",
+		"mongodb.tcmalloc_pageheap_free_bytes":           "tcmalloc_pageheap_free_bytes",
+		"mongodb.tcmalloc_pageheap_unmapped_bytes":       "tcmalloc_pageheap_unmapped_bytes",
+		"mongodb.tcmalloc_pageheap_committed_bytes":      "tcmalloc_pageheap_committed_bytes",
+		"mongodb.tcmalloc_central_cache_free_bytes":      "tcmalloc_central_cache_free_bytes",
+		"mongodb.tcmalloc_thread_cache_free_bytes":       "tcmalloc_thread_cache_free_bytes",
+		"mongodb.tcmalloc_transfer_cache_free_bytes":     "tcmalloc_transfer_cache_free_bytes",
+		"mongodb.tcmalloc_pageheap_scavenge_count":       "tcmalloc_pageheap_scavenge_count",
+		"mongodb.tcmalloc_pageheap_commit_count":         "tcmalloc_pageheap_commit_count",
+		"mongodb.tcmalloc_pageheap_decommit_count":       "tcmalloc_pageheap_decommit_count",
+		"mongodb.tcmalloc_pageheap_total_decommit_bytes": "tcmalloc_pageheap_total_decommit_bytes",
+		"mongodb.tcmalloc_pageheap_reserve_count":        "tcmalloc_pageheap_reserve_count",
+		"mongodb.tcmalloc_pageheap_total_reserve_bytes":  "tcmalloc_pageheap_total_reserve_bytes",
+
+		"mongodb.latency_reads":    "latency_reads",
+		"mongodb.latency_writes":   "latency_writes",
+		"mongodb.latency_commands": "latency_commands",
+
+		"mongodb.cursor_timed_out_count":  "cursor_timed_out_count",
+		"mongodb.cursor_total_count":      "cursor_total_count",
+		"mongodb.cursor_pinned_count":     "cursor_pinned_count",
+		"mongodb.cursor_no_timeout_count": "cursor_no_timeout_count",
+
+		"mongodb.storage_freelist_search_bucket_exhausted": "storage_freelist_search_bucket_exhausted",
+		"mongodb.storage_freelist_search_requests":         "storage_freelist_search_requests",
+		"mongodb.storage_freelist_search_scanned":          "storage_freelist_search_scanned",
+
+		"mongodb.wtcache_tracked_dirty_bytes":         "wtcache_tracked_dirty_bytes",
+		"mongodb.wtcache_current_bytes":               "wtcache_current_bytes",
+		"mongodb.wtcache_bytes_written_from":          "wtcache_bytes_written_from",
+		"mongodb.wtcache_bytes_read_into":             "wtcache_bytes_read_into",
+		"mongodb.wtcache_pages_read_into":             "wtcache_pages_read_into",
+		"mongodb.wtcache_pages_written_from":          "wtcache_pages_written_from",
+		"mongodb.wtcache_pages_requested_from":        "wtcache_pages_requested_from",
+		"mongodb.wtcache_internal_pages_evicted":      "wtcache_internal_pages_evicted",
+		"mongodb.wtcache_modified_pages_evicted":      "wtcache_modified_pages_evicted",
+		"mongodb.wtcache_unmodified_pages_evicted":    "wtcache_unmodified_pages_evicted",
+		"mongodb.wtcache_worker_thread_evictingpages": "wtcache_worker_thread_evictingpages",
+		"mongodb.wtcache_pages_evicted_by_app_thread": "wtcache_pages_evicted_by_app_thread",
+		"mongodb.wtcache_pages_queued_for_eviction":   "wtcache_pages_queued_for_eviction",
 
 		"win_cpu.Percent_DPC_Time":                    "percentage.dpc.time",
 		"win_cpu.Percent_Idle_Time":                   "percentage.idle.time",
@@ -184,7 +228,9 @@ func (r *Rename) Process(points []telegraf.Metric) []telegraf.Metric {
 			// mapping are not renamed.
 			// That's why we have to remove
 			// them in a separate loop
-			removedFields = append(removedFields, field.Key)
+			if replace != field.Key {
+				removedFields = append(removedFields, field.Key)
+			}
 			point.AddField(replace, field.Value)
 		}
 		for _, f := range removedFields {

@@ -2,42 +2,42 @@ package processors
 
 import (
 	"github.com/influxdata/telegraf"
-	"strings"
 	"regexp"
+	"strings"
 )
 
-const(
-	winOSLabel = "win"
-	memLabel = "mem"
+const (
+	winOSLabel  = "win"
+	memLabel    = "mem"
 	systemLabel = "system"
-	netLabel = "net"
+	netLabel    = "net"
 
-	osLabel = "os"
-	memoryLabel = "memory"
-	hostLabel = "host"
+	osLabel      = "os"
+	memoryLabel  = "memory"
+	hostLabel    = "host"
 	networkLabel = "net"
 
 	underscoreLabel = "_"
-	dotLabel = "."
+	dotLabel        = "."
 )
 
 var (
 	measurementReplaces = map[string]string{
-		"phpfpm":                                      "php",
-		"mongodb":                                     "mongo",
-		"mongodb_db_stats":                            "mongo",
-		"mongodb_col_stats":                           "mongo",
-		"mongodb_shard_stats":                         "mongo",
-		"apache":                                      "apache",
-		"nginx":                                       "nginx",
-		"win_cpu":                   				   "os.cpu",
-		"win_disk":                                    "os.disk",
-		"win_diskio":                                  "os.diskio",
-		"win_mem":                                     "os.memory",
-		"win_net":                                     "os.network",
-		"win_swap":                                    "os.swap",
-		"win_system":                                  "os.host",
-		"win_eventlog":                                "os.eventlog",
+		"phpfpm":              "php",
+		"mongodb":             "mongo",
+		"mongodb_db_stats":    "mongo",
+		"mongodb_col_stats":   "mongo",
+		"mongodb_shard_stats": "mongo",
+		"apache":              "apache",
+		"nginx":               "nginx",
+		"win_cpu":             "os.cpu",
+		"win_disk":            "os.disk",
+		"win_diskio":          "os.diskio",
+		"win_mem":             "os.memory",
+		"win_net":             "os.network",
+		"win_swap":            "os.swap",
+		"win_system":          "os.host",
+		"win_eventlog":        "os.eventlog",
 	}
 
 	fieldReplaces = map[string]string{
@@ -162,7 +162,7 @@ func NewRename() BatchProcessor { return &Rename{} }
 
 // Process performs a lookup in the local maps of metric/field names
 // and replaces the metric name with the new name.
-func (r *Rename) Process(points []telegraf.Metric) ([]telegraf.Metric, error) {
+func (r *Rename) Process(points []telegraf.Metric) []telegraf.Metric {
 	for _, point := range points {
 		originalName := point.Name()
 		replace, ok := measurementReplaces[originalName]
@@ -191,29 +191,29 @@ func (r *Rename) Process(points []telegraf.Metric) ([]telegraf.Metric, error) {
 			point.RemoveField(f)
 		}
 	}
-	return points, nil
+	return points
 }
 
-//Different windows versions have different metrics
-//and the user can decide which metrics to ship in telegraf config
-//since we can't get all metrics and directly replace their names
-//this part will make sure that there are no incompatible symbols
-//inside the metric nanmes
+// Different windows versions have different metrics
+// and the user can decide which metrics to ship in telegraf config
+// since we can't get all metrics and directly replace their names
+// this part will make sure that there are no incompatible symbols
+// inside the metric nanmes
 func ChangeNames(name string) string {
-	 baseNameChanger := strings.NewReplacer(winOSLabel, osLabel, memLabel, memoryLabel, systemLabel, hostLabel, netLabel, networkLabel)
-	 sanitizedChars := strings.NewReplacer(",", "", ":", "", "+" , "", "&", "", "(", "", ")", "")
-	 extraChars := regexp.MustCompile("__+")
-	 //change some common labels to match sematext ones
-	 //for metrics that we haven't covered
-	 name = baseNameChanger.Replace(name)
-	 //remove unsupported characters
-	 name = sanitizedChars.Replace(name)
-	 //remove extra __ created by removing sanitized chars
-	 name = extraChars.ReplaceAllString(name,"")
-	 //remove _ at the end of the field name (if it exists)
-	 if(len(name) > 1 && strings.Compare(name[len(name)-1:],underscoreLabel) == 0){
+	baseNameChanger := strings.NewReplacer(winOSLabel, osLabel, memLabel, memoryLabel, systemLabel, hostLabel, netLabel, networkLabel)
+	sanitizedChars := strings.NewReplacer(",", "", ":", "", "+", "", "&", "", "(", "", ")", "")
+	extraChars := regexp.MustCompile("__+")
+	//change some common labels to match sematext ones
+	//for metrics that we haven't covered
+	name = baseNameChanger.Replace(name)
+	//remove unsupported characters
+	name = sanitizedChars.Replace(name)
+	//remove extra __ created by removing sanitized chars
+	name = extraChars.ReplaceAllString(name, "")
+	//remove _ at the end of the field name (if it exists)
+	if len(name) > 1 && strings.Compare(name[len(name)-1:], underscoreLabel) == 0 {
 		name = name[:len(name)-1]
-	 } 
+	}
 	//finally, change all underscores to dots
 	return strings.ToLower(strings.Replace(name, underscoreLabel, dotLabel, -1))
 }

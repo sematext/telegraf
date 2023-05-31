@@ -225,13 +225,7 @@ func (s *Sematext) processMetrics(metrics []telegraf.Metric) ([]telegraf.Metric,
 	}
 
 	for _, p := range s.batchProcessors {
-		var err error
-		metrics, err = p.Process(metrics)
-
-		if err != nil {
-			s.Log.Errorf("error while running batch processors in Sematext output: %v", err)
-			return metrics, err
-		}
+		metrics = p.Process(metrics)
 	}
 
 	processedMetrics := make([]telegraf.Metric, 0, len(metrics))

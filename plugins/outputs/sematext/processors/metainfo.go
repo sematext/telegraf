@@ -84,7 +84,7 @@ func NewMetainfo(log telegraf.Logger, token string, receiverURL string, senderCo
 }
 
 // Process contains core logic of Metainfo processor
-func (m *Metainfo) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error) {
+func (m *Metainfo) Process(metrics []telegraf.Metric) []telegraf.Metric {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -109,7 +109,7 @@ func (m *Metainfo) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error)
 
 	}
 
-	return metrics, nil
+	return metrics
 }
 
 func (m *Metainfo) sendMetainfo(newMetrics map[string]*MetricMetainfo) {

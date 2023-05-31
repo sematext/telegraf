@@ -31,7 +31,7 @@ func NewHeartbeat() BatchProcessor {
 }
 
 // Process is a method where Heartbeat processor checks whether a heartbeat metric is needed and injects it if so
-func (h *Heartbeat) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error) {
+func (h *Heartbeat) Process(metrics []telegraf.Metric) []telegraf.Metric {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 
@@ -41,17 +41,13 @@ func (h *Heartbeat) Process(metrics []telegraf.Metric) ([]telegraf.Metric, error
 
 	for minute, timeSeconds := range minutes {
 		if h.heartbeatNeeded(minute) {
-			newMetrics, err := h.addHeartbeat(metrics, minute, timeSeconds)
-
-			if err != nil {
-				return metrics, err
-			}
+			newMetrics := h.addHeartbeat(metrics, minute, timeSeconds)
 
 			metrics = newMetrics
 		}
 	}
 
-	return metrics, nil
+	return metrics
 }
 
 // Close clears the resources processor used, no-op in this case
@@ -73,31 +69,22 @@ func findMetricMinutes(metrics []telegraf.Metric) map[int64]int64 {
 	return minMap
 }
 
-func (h *Heartbeat) addHeartbeat(metrics []telegraf.Metric, minute int64, timeSeconds int64) ([]telegraf.Metric, error) {
-	hb, err := buildHeartbeatMetric(time.Unix(timeSeconds, 0))
-	if err != nil {
-		return nil, err
-	}
+func (h *Heartbeat) addHeartbeat(metrics []telegraf.Metric, minute int64, timeSeconds int64) []telegraf.Metric {
+	hb := buildHeartbeatMetric(time.Unix(timeSeconds, 0))
 
 	metrics = append(metrics, hb)
 	h.injectedMinutes[minute] = true
 
-	return metrics, nil
+	return metrics
 }
 
-func buildHeartbeatMetric(timestamp time.Time) (telegraf.Metric, error) {
+func buildHeartbeatMetric(timestamp time.Time) telegraf.Metric {
 	// no need to inject any Sematext specific tags since MetricProcessors will be run afterwards and will take care
 	// of such things
-	hb, err := metric.New("heartbeat",
+	return metric.New("heartbeat",
 		make(map[string]string),
 		map[string]interface{}{"alive": int64(1)},
 		timestamp, telegraf.Gauge)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return hb, nil
 }
 
 func (h *Heartbeat) heartbeatNeeded(minute int64) bool {

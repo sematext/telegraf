@@ -16,7 +16,7 @@ type MetricProcessor interface {
 // metric processors. Also, metrics batch processors work on are "original" Telegraf metrics without any Sematext
 // specific adjustments.
 type BatchProcessor interface {
-	Process(metrics []telegraf.Metric) ([]telegraf.Metric, error)
+	Process(metrics []telegraf.Metric) []telegraf.Metric
 
 	Close()
 }

@@ -173,6 +173,7 @@ var (
 		"mongodb.wtcache_pages_evicted_by_app_thread": "wtcache_pages_evicted_by_app_thread",
 		"mongodb.wtcache_pages_queued_for_eviction":   "wtcache_pages_queued_for_eviction",
 
+		// windows
 		"win_cpu.Percent_DPC_Time":                    "percentage.dpc.time",
 		"win_cpu.Percent_Idle_Time":                   "percentage.idle.time",
 		"win_cpu.Percent_Interrupt_Time":              "percentage.interrupt.time",

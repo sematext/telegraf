@@ -25,13 +25,35 @@ func TestRename(t *testing.T) {
 	assert.Equal(t, "apache", results[0].Name())
 	assert.Equal(t, "php", results[1].Name())
 	assert.Equal(t, "workers.dns", results[2].FieldList()[0].Key)
-	assert.Equal(t, "etcd.slow.requests", results[3].FieldList()[0].Key)
+	assert.Equal(t, "slow.requests", results[3].FieldList()[0].Key)
 	assert.Equal(t, "fpm.requests.slow", results[4].FieldList()[0].Key)
 	assert.Equal(t, "mongo", results[5].Name())
 	assert.Equal(t, "mongodb_col_stats.ok", results[5].FieldList()[0].Key)
 	assert.Equal(t, "tcmalloc_heap_size", results[6].FieldList()[0].Key)
 	assert.Equal(t, "database.avg_obj_size", results[7].FieldList()[0].Key)
 	assert.Equal(t, "mongodb_shard_stats.in_use", results[8].FieldList()[0].Key)
+}
+
+func TestRenameIdempotent(t *testing.T) {
+	r := Rename{}
+
+	// Process a metric multiple times - field names should remain stable
+	m := newMetric("apache", nil, map[string]interface{}{"scboard_dnslookup": 120})
+
+	// First pass
+	results := r.Process([]telegraf.Metric{m})
+	assert.Equal(t, "apache", results[0].Name())
+	assert.Equal(t, "workers.dns", results[0].FieldList()[0].Key)
+
+	// Second pass - should NOT corrupt field names
+	results = r.Process(results)
+	assert.Equal(t, "apache", results[0].Name())
+	assert.Equal(t, "workers.dns", results[0].FieldList()[0].Key, "Field should remain 'workers.dns', not 'apache.workers.dns'")
+
+	// Third pass - still stable
+	results = r.Process(results)
+	assert.Equal(t, "apache", results[0].Name())
+	assert.Equal(t, "workers.dns", results[0].FieldList()[0].Key, "Field should remain 'workers.dns' after multiple passes")
 }
 
 func newMetric(name string, tags map[string]string, fields map[string]interface{}) telegraf.Metric {

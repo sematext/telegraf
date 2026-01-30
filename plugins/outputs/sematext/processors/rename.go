@@ -229,7 +229,9 @@ func (r *Rename) Process(points []telegraf.Metric) []telegraf.Metric {
 
 			replace, ok := fieldReplaces[key]
 			if !ok {
-				replace = ChangeNames(key)
+				// Use field.Key directly to avoid prepending measurement name.
+				// This prevents corruption on re-processing and ensures idempotency.
+				replace = ChangeNames(field.Key)
 			}
 			// we can't remove the fields
 			// while iterating because it

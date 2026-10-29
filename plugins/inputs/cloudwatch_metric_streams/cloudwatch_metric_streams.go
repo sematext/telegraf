@@ -52,6 +52,7 @@ type CloudWatchMetricStreams struct {
 	wg       sync.WaitGroup
 	close    chan struct{}
 	listener net.Listener
+	server   *http.Server
 	acc      telegraf.Accumulator
 }
 
@@ -119,6 +120,7 @@ func (cms *CloudWatchMetricStreams) Gather(_ telegraf.Accumulator) error {
 func (cms *CloudWatchMetricStreams) Start(acc telegraf.Accumulator) error {
 	cms.acc = acc
 	server := cms.createHTTPServer()
+	cms.server = server
 
 	var err error
 	server.TLSConfig, err = cms.ServerConfig.TLSConfig()
@@ -138,7 +140,7 @@ func (cms *CloudWatchMetricStreams) Start(acc telegraf.Accumulator) error {
 	go func() {
 		defer cms.wg.Done()
 		if err := server.Serve(cms.listener); err != nil {
-			if !errors.Is(err, net.ErrClosed) {
+			if !errors.Is(err, net.ErrClosed) && !errors.Is(err, http.ErrServerClosed) {
 				cms.Log.Errorf("Serve failed: %v", err)
 			}
 			close(cms.close)
@@ -391,7 +393,11 @@ func (cms *CloudWatchMetricStreams) authenticateIfSet(handler http.HandlerFunc, 
 
 // Stop cleans up all resources
 func (cms *CloudWatchMetricStreams) Stop() {
-	if cms.listener != nil {
+	// Close the server, not just the listener, so keep-alive connections
+	// opened before Stop don't keep being served.
+	if cms.server != nil {
+		cms.server.Close()
+	} else if cms.listener != nil {
 		cms.listener.Close()
 	}
 	cms.wg.Wait()

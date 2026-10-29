@@ -86,6 +86,14 @@ func readJSON(t *testing.T, jsonFilePath string) []byte {
 	return data
 }
 
+// Every test listens on localhost:8080 and Stop closes the server's
+// connections, so a pooled keep-alive connection from the previous test is
+// dead. POSTs are not retried, so don't pool connections in these tests.
+func TestMain(m *testing.M) {
+	http.DefaultTransport.(*http.Transport).DisableKeepAlives = true
+	os.Exit(m.Run())
+}
+
 func TestInvalidListenerConfig(t *testing.T) {
 	metricStream := newTestCloudWatchMetricStreams()
 	metricStream.ServiceAddress = "address_without_port"

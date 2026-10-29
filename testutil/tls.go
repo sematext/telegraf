@@ -45,7 +45,7 @@ func (p *pki) CACertPath() string {
 }
 
 func (p *pki) CipherSuite() string {
-	return "TLS_RSA_WITH_3DES_EDE_CBC_SHA"
+	return "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
 }
 
 func (p *pki) TLSMinVersion() string {

@@ -66,8 +66,12 @@ func FormatFullVersion() string {
 
 // ProductToken returns a tag for Telegraf that can be used in user agents.
 func ProductToken() string {
+	// runtime.Version() carries an experiments suffix ("go1.27.3-X:nojsonv2",
+	// " X:" on older Go) when built with GOEXPERIMENT; keep only the release.
+	goVersion, _, _ := strings.Cut(runtime.Version(), " ")
+	goVersion, _, _ = strings.Cut(goVersion, "-X:")
 	return fmt.Sprintf("Telegraf/%s Go/%s",
-		Version, strings.TrimPrefix(runtime.Version(), "go"))
+		Version, strings.TrimPrefix(goVersion, "go"))
 }
 
 // ReadLines reads contents from a file and splits them by new lines.
